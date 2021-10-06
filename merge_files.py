@@ -4,6 +4,32 @@ import os
 # Отражение максимального количества колонок в пайчарме
 pd.set_option('display.max_columns', None)
 
+def create_table_groups_to_import(df):
+    """
+    Функция для создания таблицы с группами
+    :param df:базовый датафрейм со всеми данными
+    :return:Создает таблицу установленного вида и формата
+    """
+    edu_df = pd.read_excel('resources/edu_ou_t.xlsx')
+
+    # Группируем
+    group_df = df.groupby('Группа')
+    out_df_group = group_df.first()
+    # Выносим группы из индекса
+    out_df_group.reset_index(inplace=True)
+    out_df_group = out_df_group[['Код специальности','Группа','Год приема в БРИТ','Текущий курс']]
+
+    out_df_group.columns = ['short_title_p','Группа','Год приема в БРИТ','Текущий курс']
+    out_df_group.to_excel('Базовые группы.xlsx')
+    # print(out_df_group)
+
+    # out_df_group = out_df_group.merge(edu_df,on=['short_title_p'],how='inner')
+    out_df_group = out_df_group.merge(edu_df.drop_duplicates(),on=['short_title_p'],how='left')
+    # print(out_df_group)
+    out_df_group.to_excel('Группы.xlsx')
+
+
+
 
 def check_data(df):
     """
@@ -11,6 +37,7 @@ def check_data(df):
     :param df: данные по группе
     :return: датафрейм с найденными ошибками
     """
+
     missed_df = pd.DataFrame({'Отделение':None,'Группа':None,'ФИО':None,'Статус':None},index=['a'])
     for row in df.itertuples():
         result_check = ''
@@ -82,7 +109,10 @@ for file in os.listdir(path):
     base_df = base_df.append(temp_df)
 # Вставляем столбец после ФИО, что логично
 base_df.insert(3, 'Наименование документа', 'Паспорт гражданина Российской Федерации')
+create_table_groups_to_import(base_df)
 
-# print(missed_df.head())
+# Создание таблицы с группами
+
+
 missed_df.to_excel('Некорректные данные.xlsx', index=False)
 base_df.to_excel('base_to_import.xlsx', index=False)
