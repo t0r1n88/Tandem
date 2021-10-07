@@ -4,6 +4,7 @@ import os
 # Отражение максимального количества колонок в пайчарме
 pd.set_option('display.max_columns', None)
 
+
 def create_table_groups_to_import(df):
     """
     Функция для создания таблицы с группами
@@ -12,23 +13,47 @@ def create_table_groups_to_import(df):
     """
     edu_df = pd.read_excel('resources/edu_ou_t.xlsx')
 
+    # Нам нужны только id специальностей, поэтому создаем словарь вида код специальности:id специальности
+    dct_ou = dict()
+
+    for row in edu_df.itertuples():
+        dct_ou[row[4]] = row[1]
+    # Мы получили словарь с нужными айди
+    #
     # Группируем
     group_df = df.groupby('Группа')
     out_df_group = group_df.first()
     # Выносим группы из индекса
     out_df_group.reset_index(inplace=True)
-    out_df_group = out_df_group[['Код специальности','Группа','Год приема в БРИТ','Текущий курс']]
+    # Забираем нужные столбцы
+    out_df_group = out_df_group[['Код специальности', 'Группа', 'Год приема в БРИТ', 'Текущий курс']]
+    # Переименовываем их
+    out_df_group.columns = ['short_title_p', 'Группа', 'Год приема в БРИТ', 'Текущий курс']
+    out_df_group.loc[:,'id'] = None
 
-    out_df_group.columns = ['short_title_p','Группа','Год приема в БРИТ','Текущий курс']
-    out_df_group.to_excel('Базовые группы.xlsx')
-    # print(out_df_group)
+    for row in out_df_group.itertuples():
+        out_df_group.loc[row[0],'id'] = dct_ou[row[1]]
+    # Создаем итоговый датафрейм
+    group_t_columns = pd.DataFrame(index=range(1,out_df_group.shape[0]))
+    group_t_columns['edu_ou_id'] = out_df_group['id']
+    group_t_columns['name_p'] = out_df_group['Группа']
+    group_t_columns['year_p'] = out_df_group['Год приема в БРИТ']
+    group_t_columns['course_p'] = out_df_group['Текущий курс']
+    group_t_columns.to_excel('group_t_columns.xlsx')
 
-    # out_df_group = out_df_group.merge(edu_df,on=['short_title_p'],how='inner')
-    out_df_group = out_df_group.merge(edu_df.drop_duplicates(),on=['short_title_p'],how='left')
-    # print(out_df_group)
-    out_df_group.to_excel('Группы.xlsx')
 
 
+
+
+
+
+
+
+    #
+    # # out_df_group = out_df_group.merge(edu_df,on=['short_title_p'],how='inner')
+    # out_df_group = out_df_group.merge(edu_df.drop_duplicates(),on=['short_title_p'],how='left')
+    # # print(out_df_group)
+    # out_df_group.to_excel('Группы.xlsx')
 
 
 def check_data(df):
@@ -38,7 +63,7 @@ def check_data(df):
     :return: датафрейм с найденными ошибками
     """
 
-    missed_df = pd.DataFrame({'Отделение':None,'Группа':None,'ФИО':None,'Статус':None},index=['a'])
+    missed_df = pd.DataFrame({'Отделение': None, 'Группа': None, 'ФИО': None, 'Статус': None}, index=['a'])
     for row in df.itertuples():
         result_check = ''
         # Проверяем паспортные данные
@@ -101,8 +126,9 @@ missed_df = pd.read_excel('resources/missed_data.xlsx')
 # Обработка файлов
 # Перебираем файлы в указанной директории. Создаем датафрейм из указанного листа
 for file in os.listdir(path):
-    temp_df = pd.read_excel(f'{path}/{file}', sheet_name='Список', dtype={'ИНН': str, 'Телефон': str,'Номер паспорта':str,
-                                                                          'Серия паспорта':str})
+    temp_df = pd.read_excel(f'{path}/{file}', sheet_name='Список',
+                            dtype={'ИНН': str, 'Телефон': str, 'Номер паспорта': str,
+                                   'Серия паспорта': str})
     temp_df.fillna('НЕ ЗАПОЛНЕНО!!!', inplace=True)
     # Функция для проверки данных
     missed_df = missed_df.append(check_data(temp_df))
