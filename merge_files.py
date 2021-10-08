@@ -29,12 +29,12 @@ def create_table_groups_to_import(df):
     out_df_group = out_df_group[['Код специальности', 'Группа', 'Год приема в БРИТ', 'Текущий курс']]
     # Переименовываем их
     out_df_group.columns = ['short_title_p', 'Группа', 'Год приема в БРИТ', 'Текущий курс']
-    out_df_group.loc[:,'id'] = None
+    out_df_group.loc[:, 'id'] = None
 
     for row in out_df_group.itertuples():
-        out_df_group.loc[row[0],'id'] = dct_ou[row[1]]
+        out_df_group.loc[row[0], 'id'] = dct_ou[row[1]]
     # Создаем итоговый датафрейм
-    group_t_columns = pd.DataFrame(index=range(1,out_df_group.shape[0]))
+    group_t_columns = pd.DataFrame(index=range(1, out_df_group.shape[0]))
     group_t_columns['edu_ou_id'] = out_df_group['id']
     group_t_columns['name_p'] = out_df_group['Группа']
     group_t_columns['year_p'] = out_df_group['Год приема в БРИТ']
@@ -42,18 +42,35 @@ def create_table_groups_to_import(df):
     group_t_columns.to_excel('group_t_columns.xlsx')
 
 
-
-
-
-
-
-
-
-    #
-    # # out_df_group = out_df_group.merge(edu_df,on=['short_title_p'],how='inner')
-    # out_df_group = out_df_group.merge(edu_df.drop_duplicates(),on=['short_title_p'],how='left')
-    # # print(out_df_group)
-    # out_df_group.to_excel('Группы.xlsx')
+def create_table_person_to_import(df):
+    """
+    Функция для генерации таблицы импорта персон
+    :param df:
+    :return:
+    """
+    # Считываем базовый датафрейм с колонками
+    person_df = pd.read_excel('resources/person_t_columns.xlsx')
+    # Количество строк
+    count_person = person_df.shape[0]
+    # Начинаем заполнять таблицу
+    person_df['id'] = range(1, count_person + 1)
+    person_df['identity_type_p'] = '1 Паспорт гражданина Российской Федерации'
+    for row in df.itertuples():
+        person_df.loc[row[0], 'identity_seria'] = row[4]
+        person_df.loc[row[0], 'identity_number'] = row[5]
+        person_df.loc[row[0], 'identity_firstName'] = row[2]
+        person_df.loc[row[0], 'identity_lastName'] = row[1]
+        person_df.loc[row[0], 'identity_middleName'] = row[3]
+        person_df.loc[row[0], 'identity_birthDate'] = row[9]
+        person_df.loc[row[0], 'identity_birthPlace'] = row[10]
+        person_df.loc[row[0], 'identity_sex_p'] = row[14]
+        person_df.loc[row[0], 'identity_date_p'] = row[8]
+        person_df.loc[row[0], 'identity_middleName'] = row[3]
+        person_df.loc[row[0], 'identity_code_p'] = row[6]
+        person_df.loc[row[0], 'identity_place_p'] = row[7]
+        person_df.loc[row[0], 'identity_citizenship_p'] = '0 Россия'
+        person_df.loc[row[0], 'identity_middleName'] = row[3]
+        person_df.loc[row[0], 'identity_middleName'] = row[3]
 
 
 def check_data(df):
@@ -117,7 +134,7 @@ def check_passport(row: tuple):
 
 
 # Путь к файлам котороые нужно соединить
-path = 'resources/MO/'
+path = 'resources/data/'
 
 # Базовый файл куда будут добавлятся данные
 base_df = pd.read_excel('resources/base.xlsx')
@@ -126,19 +143,33 @@ missed_df = pd.read_excel('resources/missed_data.xlsx')
 # Обработка файлов
 # Перебираем файлы в указанной директории. Создаем датафрейм из указанного листа
 for file in os.listdir(path):
-    temp_df = pd.read_excel(f'{path}/{file}', sheet_name='Список',
-                            dtype={'ИНН': str, 'Телефон': str, 'Номер паспорта': str,
-                                   'Серия паспорта': str})
-    temp_df.fillna('НЕ ЗАПОЛНЕНО!!!', inplace=True)
-    # Функция для проверки данных
-    missed_df = missed_df.append(check_data(temp_df))
-    base_df = base_df.append(temp_df)
+    current_file = file
+    try:
+
+        print(file)
+        temp_df = pd.read_excel(f'{path}/{file}', sheet_name=0,
+                                dtype={'ИНН': str, 'Телефон': str, 'Номер паспорта': str,
+                                       'Серия паспорта': str})
+        temp_df.fillna('НЕ ЗАПОЛНЕНО!!!', inplace=True)
+        # Функция для проверки данных
+        missed_df = missed_df.append(check_data(temp_df))
+        base_df = base_df.append(temp_df)
+    except  KeyError as e:
+        with open('errors.txt', 'a', encoding='utf-8') as f:
+            f.write(f'{e} {current_file}\n')
+        continue
+    except:
+        with open('errors.txt', 'a', encoding='utf-8') as f:
+            f.write(f'{current_file}\n')
+        continue
+
 # Вставляем столбец после ФИО, что логично
-base_df.insert(3, 'Наименование документа', 'Паспорт гражданина Российской Федерации')
-create_table_groups_to_import(base_df)
+# base_df.insert(3, 'Наименование документа', 'Паспорт гражданина Российской Федерации')
+# create_table_groups_to_import(base_df)
+# create_table_person_to_import(base_df)
 
 # Создание таблицы с группами
-
+print(base_df.head())
 
 missed_df.to_excel('Некорректные данные.xlsx', index=False)
 base_df.to_excel('base_to_import.xlsx', index=False)
