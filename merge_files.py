@@ -39,7 +39,7 @@ def create_table_groups_to_import(df):
     group_t_columns['name_p'] = out_df_group['Группа']
     group_t_columns['year_p'] = out_df_group['Год приема в БРИТ']
     group_t_columns['course_p'] = out_df_group['Текущий курс']
-    group_t_columns.to_excel('group_t_columns.xlsx')
+    group_t_columns.to_excel('Группы.xlsx')
 
 
 def create_table_person_to_import(df):
@@ -146,7 +146,7 @@ for file in os.listdir(path):
     current_file = file
     try:
 
-        print(file)
+        # print(file)
         temp_df = pd.read_excel(f'{path}/{file}', sheet_name=0,
                                 dtype={'ИНН': str, 'Телефон': str, 'Номер паспорта': str,
                                        'Серия паспорта': str})
@@ -165,11 +165,12 @@ for file in os.listdir(path):
 
 # Вставляем столбец после ФИО, что логично
 # base_df.insert(3, 'Наименование документа', 'Паспорт гражданина Российской Федерации')
-# create_table_groups_to_import(base_df)
+
 # create_table_person_to_import(base_df)
 
 # Создание таблицы с группами
-print(base_df.head())
+create_table_groups_to_import(base_df)
+# print(base_df.head())
 
 missed_df.to_excel('Некорректные данные.xlsx', index=False)
 base_df.to_excel('base_to_import.xlsx', index=False)
