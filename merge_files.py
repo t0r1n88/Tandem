@@ -169,7 +169,7 @@ for file in os.listdir(path):
 # create_table_person_to_import(base_df)
 
 # Создание таблицы с группами
-create_table_groups_to_import(base_df)
+# create_table_groups_to_import(base_df)
 # print(base_df.head())
 
 missed_df.to_excel('Некорректные данные.xlsx', index=False)
