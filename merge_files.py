@@ -163,8 +163,7 @@ for file in os.listdir(path):
             f.write(f'{current_file}\n')
         continue
 
-# Вставляем столбец после ФИО, что логично
-# base_df.insert(3, 'Наименование документа', 'Паспорт гражданина Российской Федерации')
+
 
 # create_table_person_to_import(base_df)
 
