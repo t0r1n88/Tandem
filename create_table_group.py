@@ -2,7 +2,7 @@ import pandas as pd
 
 # Отражение максимального количества колонок в пайчарме
 pd.set_option('display.max_columns', None)
-base_df = pd.read_excel('resources/base_to_import.xlsx')
+base_df = pd.read_excel('base_to_import.xlsx')
 
 edu_name_df = pd.read_excel('resources/edu_ou_t.xlsx')
 # Отбираем колонку с кодом специальности и id
@@ -12,8 +12,7 @@ print(short_edu_df.head())
 # Отбираем нужные колонки
 group_df = base_df[['Группа', 'Код специальности', 'ср. балл атт.', 'Год приема в БРИТ', 'Текущий курс']]
 # Группируем по 2 столбцам
-agg_group = group_df.groupby(['Группа', 'Код специальности', 'Год приема в БРИТ', 'Текущий курс'])[
-    'ср. балл атт.'].count()
+agg_group = group_df.groupby(['Группа', 'Код специальности', 'Год приема в БРИТ', 'Текущий курс'])['ср. балл атт.'].count()
 # добавляем индекс
 agg_group = agg_group.reset_index()
 # Удаляем кололонку со средним баллом
