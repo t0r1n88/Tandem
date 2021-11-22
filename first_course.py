@@ -8,7 +8,7 @@ base_df = pd.read_excel('resources/data_first_course.xlsx',dtype={'Дата вы
 base_df['ФИО'] = base_df['Фамилия']+' ' + base_df['Имя']+' ' + base_df['Отчество']
 
 # Создаем датафрейм с нужными столбцами
-df = base_df[['ФИО','ИНН','СНИЛС','e-mail','Телефон']]
+df = base_df[['ФИО','ИНН','СНИЛС','e-mail','Телефон','Группа']]
 
 # Считываем главный датафрейм
 person_df = pd.read_excel('resources/person_t.xlsx')
@@ -23,7 +23,10 @@ itog_df['snils_number'] = itog_df['СНИЛС']
 itog_df['email'] = itog_df['e-mail']
 itog_df['phoneMobile'] = itog_df['Телефон']
 
-itog_df.drop(['ФИО','ИНН','СНИЛС','e-mail','Телефон'],inplace=True,axis=1)
+itog_df.drop(['ФИО','ИНН','СНИЛС','e-mail','Телефон','Группа'],inplace=True,axis=1)
 
 itog_df.to_excel('Первый курс persont_t.xlsx',index=False)
 
+# missed_df = pd.read_excel('resources/missed_first_course.xlsx')
+# missed_out_df = pd.merge(missed_df,df,left_on='e-mail',right_on='e-mail')
+# missed_out_df.to_excel('ФИО пропущенных.xlsx',index=False)
