@@ -23,9 +23,19 @@ itog_df['snils_number'] = itog_df['СНИЛС']
 itog_df['email'] = itog_df['e-mail']
 itog_df['phoneMobile'] = itog_df['Телефон']
 
-itog_df.drop(['ФИО','ИНН','СНИЛС','e-mail','Телефон','Группа'],inplace=True,axis=1)
+# Сохраняем датафрейм чтобы соединить с группами
+group_df = itog_df[['id','ФИО','Группа']]
 
-itog_df.to_excel('Первый курс persont_t.xlsx',index=False)
+group_df.to_excel('Для групп.xlsx',index=False)
+# itog_df.drop(['ФИО','ИНН','СНИЛС','e-mail','Телефон','Группа'],inplace=True,axis=1)
+
+
+
+
+# Сохраняем в итоги
+# itog_df.to_excel('Первый курс persont_t.xlsx',index=False)
+
+
 
 # missed_df = pd.read_excel('resources/missed_first_course.xlsx')
 # missed_out_df = pd.merge(missed_df,df,left_on='e-mail',right_on='e-mail')

@@ -149,7 +149,8 @@ for file in os.listdir(path):
         # print(file)
         temp_df = pd.read_excel(f'{path}/{file}', sheet_name=0,
                                 dtype={'ИНН': str, 'Телефон': str, 'Номер паспорта': str,
-                                       'Серия паспорта': str})
+                                       'Серия паспорта': str,'Дата выдачи паспорта':str,'Дата рождения':str})
+
         temp_df.fillna('НЕ ЗАПОЛНЕНО!!!', inplace=True)
         # Функция для проверки данных
         missed_df = missed_df.append(check_data(temp_df))
@@ -172,4 +173,9 @@ for file in os.listdir(path):
 # print(base_df.head())
 
 missed_df.to_excel('Некорректные данные.xlsx', index=False)
+
+# конвертируем в формат короткой даты
+base_df['Дата выдачи паспорта'] = pd.to_datetime(base_df['Дата выдачи паспорта'],format='%Y-%m-%d').dt.strftime('%d.%m.%Y')
+base_df['Дата рождения'] = pd.to_datetime(base_df['Дата рождения'],format='%Y-%m-%d').dt.strftime('%d.%m.%Y')
+print(base_df['Дата рождения'])
 base_df.to_excel('base_to_import.xlsx', index=False)
