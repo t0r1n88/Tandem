@@ -32,7 +32,7 @@ wb.create_sheet(title='Полные тезки',index=2)
 
 general_table = 'Общий список БРИТ 26.11.2021.xlsx'
 
-path_to_end_folder = 'resources/'
+path_to_end_folder_report = 'resources/'
 
 df = pd.read_excel(general_table)
 
@@ -66,4 +66,4 @@ wb['Полные тезки'].column_dimensions['B'].width = 30
 t = time.localtime()
 current_time = time.strftime('%H_%M_%S', t)
 # Сохраняем итоговый файл
-wb.save(f'{path_to_end_folder}/Однофамильцы,Полные тезки от {current_time}.xlsx')
+wb.save(f'{path_to_end_folder_report}/Однофамильцы,Полные тезки от {current_time}.xlsx')
