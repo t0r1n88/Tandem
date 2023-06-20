@@ -66,7 +66,7 @@ def processing_report():
         df_abitur = pd.read_excel(name_file_abiturs, skiprows=3, usecols=['Абитуриент', 'Доп. статус', 'Состояние'])
         df_person = pd.read_excel(name_file_person, sheet_name='Абитуриенты', skiprows=8,
                                   usecols=['ФИО', 'Нуждается в общежитии', 'Формирующее подр.',
-                                           'Направление, специальность, профессия', 'Сдан оригинал'])
+                                           'Направление подготовки', 'Сдан оригинал'])
 
         wb = openpyxl.Workbook()
         # Переименовываем лист
@@ -89,16 +89,16 @@ def processing_report():
         cross_df['for_counting'] = 1
 
         svod_df = pd.DataFrame.pivot_table(cross_df,
-                                           index=['Формирующее подр.', 'Направление, специальность, профессия'],
+                                           index=['Формирующее подр.', 'Направление подготовки'],
                                            values=['for_counting', 'Состояние', 'Сдан оригинал', 'Доп. статус',
                                                    'Нуждается в общежитии'],
                                            aggfunc='sum')
 
-        svod_df.columns = ['Сдали всего', 'Сирот чел.', 'Нуждается в общежитии чел.', 'Сдано оригиналов',
+        svod_df.columns = ['Сдали всего', 'Сирот чел.',
+                           'Нуждается в общежитии чел.', 'Сдано оригиналов',
                            'Забрали заявления']
 
         svod_df['Итого'] = svod_df['Сдали всего'] - svod_df['Забрали заявления']
-
         # Меняем местами столбцы
         out_df = svod_df.reindex(columns=['Сдали всего', 'Забрали заявления', 'Итого', 'Сдано оригиналов', 'Сирот чел.',
                                           'Нуждается в общежитии чел.'])
@@ -134,7 +134,7 @@ def processing_report():
 
         # Получаем текущее время для того чтобы использовать в названии
         t = time.localtime()
-        current_time = time.strftime('%H_%M_%S', t)
+        current_time = time.strftime('%d_%m', t)
         # Сохраняем итоговый файл
         wb.save(f'{path_to_end_folder_report}/Ежедневный отчет приемной комиссии ГБПОУ БРИТ {current_time}.xlsx')
     except NameError:
@@ -145,7 +145,7 @@ def processing_report():
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('ЦОПП Бурятия')
+    window.title('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.1')
     window.geometry('700x660')
     window.resizable(False, False)
 
