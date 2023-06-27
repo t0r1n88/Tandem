@@ -87,6 +87,7 @@ def processing_report():
         dupl_cross_df['Сироты'] = dupl_cross_df['Доп. статус'].apply(lambda x: 1 if 'Сирота;' in x else 0)
         dupl_cross_df['СВО'] = dupl_cross_df['Доп. статус'].apply(
             lambda x: 1 if 'Дети военнослужащих, участвующих в спецоперации' in x else 0)
+        dupl_cross_df['Целевой договор'] = dupl_cross_df['Доп. статус'].apply(lambda x: 1 if 'Целевой договор' in x else 0)
 
         dupl_cross_df['for_counting'] = 1
 
@@ -94,12 +95,12 @@ def processing_report():
 
         dupl_svod_df = pd.DataFrame.pivot_table(dupl_cross_df,
                                                 index=['Формирующее подр.', 'Направление подготовки'],
-                                                values=['for_counting', 'Состояние', 'Сдан оригинал', 'Сироты', 'СВО',
+                                                values=['for_counting', 'Состояние', 'Сдан оригинал', 'Сироты', 'СВО','Целевой договор',
                                                         'Нуждается в общежитии'],
                                                 aggfunc='sum')
 
         dupl_svod_df.columns = ['Заявлений', 'Нуждается в общежитии чел.', 'Дети СВО', 'Сдано оригиналов', 'Сирот чел.',
-                                'Забрали заявления']
+                                'Забрали заявления','Целевой договор']
 
         dupl_svod_df['Итого заявлений'] = dupl_svod_df['Заявлений'] - dupl_svod_df['Забрали заявления']
 
@@ -108,7 +109,7 @@ def processing_report():
         single_out_df = dupl_svod_df.reindex(
             columns=['Заявлений', 'Забрали заявления', 'Итого заявлений', 'Сдано оригиналов',
                      'Нуждается в общежитии чел.',
-                     'Сирот чел.', 'Дети СВО'])
+                     'Сирот чел.', 'Дети СВО','Целевой договор'])
 
 
         # Соединяем оба датафрейма

@@ -68,10 +68,48 @@ def processing_report():
                                   usecols=['ФИО', 'Нуждается в общежитии', 'Формирующее подр.',
                                            'Направление подготовки', 'Сдан оригинал'])
 
-        wb = openpyxl.Workbook()
-        # Переименовываем лист
-        sheet = wb['Sheet']
-        sheet.title = 'Отчет'
+        df_person = df_person[~df_person['Направление подготовки'].isnull()]  # убираем тех у кого нет заявлений
+
+        df_dupl = df_person.drop_duplicates(subset='ФИО')  # создаем датафрейм без дубликатов
+
+
+        dupl_cross_df = df_dupl.merge(df_abitur, how='inner', left_on='ФИО', right_on='Абитуриент')
+
+        # Преобразовываем да-нет в 1 или 0 для подсчетов
+        dupl_cross_df['Нуждается в общежитии'] = dupl_cross_df['Нуждается в общежитии'].apply(
+            lambda x: 0 if x == 'нет' else 1)
+        dupl_cross_df['Сдан оригинал'] = dupl_cross_df['Сдан оригинал'].apply(lambda x: 0 if x == 'нет' else 1)
+        dupl_cross_df['Состояние'] = dupl_cross_df['Состояние'].apply(lambda x: 1 if x == 'Забрал документы' else 0)
+
+
+        # заменяем нан на пустые строки чтобы произвести поиск слова сирота;
+        dupl_cross_df['Доп. статус'].fillna('', inplace=True)
+        dupl_cross_df['Сироты'] = dupl_cross_df['Доп. статус'].apply(lambda x: 1 if 'Сирота;' in x else 0)
+        dupl_cross_df['СВО'] = dupl_cross_df['Доп. статус'].apply(
+            lambda x: 1 if 'Дети военнослужащих, участвующих в спецоперации' in x else 0)
+
+        dupl_cross_df['for_counting'] = 1
+
+        dupl_cross_df.drop(columns=['Доп. статус'], inplace=True)
+
+        dupl_svod_df = pd.DataFrame.pivot_table(dupl_cross_df,
+                                                index=['Формирующее подр.', 'Направление подготовки'],
+                                                values=['for_counting', 'Состояние', 'Сдан оригинал', 'Сироты', 'СВО',
+                                                        'Нуждается в общежитии'],
+                                                aggfunc='sum')
+
+        dupl_svod_df.columns = ['Заявлений', 'Нуждается в общежитии чел.', 'Дети СВО', 'Сдано оригиналов', 'Сирот чел.',
+                                'Забрали заявления']
+
+        dupl_svod_df['Итого заявлений'] = dupl_svod_df['Заявлений'] - dupl_svod_df['Забрали заявления']
+
+        dupl_svod_df['Итого заявлений'] = dupl_svod_df['Заявлений'] - dupl_svod_df['Забрали заявления']
+        # Меняем местами столбцы
+        single_out_df = dupl_svod_df.reindex(
+            columns=['Заявлений', 'Забрали заявления', 'Итого заявлений', 'Сдано оригиналов',
+                     'Нуждается в общежитии чел.',
+                     'Сирот чел.', 'Дети СВО'])
+
 
         # Соединяем оба датафрейма
 
@@ -84,40 +122,65 @@ def processing_report():
 
         # заменяем нан на пустые строки чтобы произвести поиск слова сирота;
         cross_df['Доп. статус'].fillna('', inplace=True)
-        cross_df['Доп. статус'] = cross_df['Доп. статус'].apply(lambda x: 1 if 'Сирота;' in x else 0)
+        cross_df['Сироты'] = cross_df['Доп. статус'].apply(lambda x: 1 if 'Сирота;' in x else 0)
+        cross_df['СВО'] = cross_df['Доп. статус'].apply(
+            lambda x: 1 if 'Дети военнослужащих, участвующих в спецоперации' in x else 0)
 
         cross_df['for_counting'] = 1
 
+        cross_df.drop(columns=['Доп. статус'], inplace=True)
+
         svod_df = pd.DataFrame.pivot_table(cross_df,
                                            index=['Формирующее подр.', 'Направление подготовки'],
-                                           values=['for_counting', 'Состояние', 'Сдан оригинал', 'Доп. статус',
+                                           values=['for_counting', 'Состояние', 'Сдан оригинал', 'Сироты', 'СВО',
                                                    'Нуждается в общежитии'],
                                            aggfunc='sum')
 
-        svod_df.columns = ['Сдали всего', 'Сирот чел.',
-                           'Нуждается в общежитии чел.', 'Сдано оригиналов',
+        svod_df.columns = ['Заявлений', 'Нуждается в общежитии чел.', 'Дети СВО', 'Сдано оригиналов', 'Сирот чел.',
                            'Забрали заявления']
 
-        svod_df['Итого'] = svod_df['Сдали всего'] - svod_df['Забрали заявления']
+        svod_df['Итого заявлений'] = svod_df['Заявлений'] - svod_df['Забрали заявления']
+
+        svod_df['Итого заявлений'] = svod_df['Заявлений'] - svod_df['Забрали заявления']
         # Меняем местами столбцы
-        out_df = svod_df.reindex(columns=['Сдали всего', 'Забрали заявления', 'Итого', 'Сдано оригиналов', 'Сирот чел.',
-                                          'Нуждается в общежитии чел.'])
+        out_df = svod_df.reindex(columns=['Заявлений', 'Забрали заявления', 'Итого заявлений', 'Сдано оригиналов',
+                                          'Нуждается в общежитии чел.',
+                                          'Сирот чел.', 'Дети СВО'])
 
-        # разворачиваем столбец в строку
-        sum_row = out_df.sum(axis=0).to_frame().transpose()
+        out_df = out_df.reset_index()
 
-        # Добавляем колонки чтобы сделать из них мультинидекс .Ужасно решение но что есть то есть
-        sum_row['1'] = 'Всего'
-        sum_row['2'] = ''
+        out_df = out_df.iloc[:, :5]
 
-        # Делем мультинидекс и объединяем датафреймы
-        sum_row.set_index(['1', '2'], inplace=True)
-        all_out_df = pd.concat([out_df, sum_row], axis=0)
 
-        # Преобразовываем мультинидекс в колонки
-        finish_df = all_out_df.reset_index()
+        single_out_df = single_out_df.iloc[:, 3:]
 
-        for r in dataframe_to_rows(finish_df, index=False, header=True):
+        single_out_df = single_out_df.reset_index()
+
+
+        finish_df = pd.merge(out_df, single_out_df, how='outer')  # объединяем
+
+
+        finish_df.fillna(0, inplace=True)
+
+
+        finish_df.iloc[:, 2:] = finish_df.iloc[:, 2:].applymap(int)
+
+
+        wb = openpyxl.Workbook()
+        # Переименовываем лист
+        sheet = wb['Sheet']
+        sheet.title = 'Отчет'
+
+        sum_row = finish_df.sum(axis=0).to_frame().transpose()
+
+        sum_row['Формирующее подр.'] = 'Всего'
+        sum_row['Направление подготовки'] = ''
+
+        # объединяем датафреймы
+
+        all_finish_df = pd.concat([finish_df, sum_row], axis=0)
+
+        for r in dataframe_to_rows(all_finish_df, index=False, header=True):
             if len(r) != 1:
                 wb['Отчет'].append(r)
 
@@ -134,9 +197,12 @@ def processing_report():
 
         # Получаем текущее время для того чтобы использовать в названии
         t = time.localtime()
-        current_time = time.strftime('%d_%m', t)
+        current_time = time.strftime('%H_%M_%d_%m', t)
         # Сохраняем итоговый файл
         wb.save(f'{path_to_end_folder_report}/Ежедневный отчет приемной комиссии ГБПОУ БРИТ {current_time}.xlsx')
+
+
+
     except NameError:
         messagebox.showerror('ЦОПП Бурятия','Выберите файлы для обработки и конечную папку!')
     else:
@@ -145,7 +211,7 @@ def processing_report():
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.1')
+    window.title('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.2')
     window.geometry('700x660')
     window.resizable(False, False)
 
