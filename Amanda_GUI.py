@@ -12,9 +12,12 @@ from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import ttk
 import time
+import datetime
 # pd.options.mode.chained_assignment = None  # default='warn'
 import warnings
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
+pd.options.mode.chained_assignment = None  # default='warn'
+
 
 
 def resource_path(relative_path):
@@ -249,14 +252,395 @@ def processing_report():
 
 
     except NameError:
-        messagebox.showerror('ЦОПП Бурятия','Выберите файлы для обработки и конечную папку!')
+        messagebox.showerror('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.5','Выберите файлы для обработки и конечную папку!')
     else:
-        messagebox.showinfo('ЦОПП Бурятия','Создание отчета успешно завершено!')
+        messagebox.showinfo('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.5','Создание отчета успешно завершено!')
+
+"""
+Функции для проверки наличия людей
+"""
+def convert_columns_to_str(df, number_columns):
+    """
+    Функция для конвертации указанных столбцов в строковый тип и очистки от пробельных символов в начале и конце
+    """
+
+    for column in number_columns:  # Перебираем список нужных колонок
+        try:
+            df.iloc[:, column] = df.iloc[:, column].astype(str)
+            # Очищаем колонку от пробельных символов с начала и конца
+            df.iloc[:, column] = df.iloc[:, column].apply(lambda x: x.strip())
+        except IndexError:
+            messagebox.showerror('Веста Обработка таблиц и создание документов ver 1.35',
+                                 'Проверьте порядковые номера колонок которые вы хотите обработать.')
+
+
+def convert_params_columns_to_int(lst):
+    """
+    Функция для конвератации значений колонок которые нужно обработать.
+    Очищает от пустых строк, чтобы в итоге остался список из чисел в формате int
+    """
+    out_lst = [] # Создаем список в который будем добавлять только числа
+    for value in lst: # Перебираем список
+        try:
+            # Обрабатываем случай с нулем, для того чтобы после приведения к питоновскому отсчету от нуля не получилась колонка с номером -1
+            number = int(value)
+            if number != 0:
+                out_lst.append(value) # Если конвертирования прошло без ошибок то добавляем
+            else:
+                continue
+        except: # Иначе пропускаем
+            continue
+    return out_lst
+
+def create_doc_convert_date(cell):
+    """
+    Функция для конвертации даты при создании документов
+    :param cell:
+    :return:
+    """
+    try:
+        string_date = datetime.datetime.strftime(cell, '%d.%m.%Y')
+        return string_date
+    except ValueError:
+        return 'Не удалось конвертировать дату.Проверьте значение ячейки!!!'
+    except TypeError:
+        return 'Не удалось конвертировать дату.Проверьте значение ячейки!!!'
+
+def check_date_columns(i, value):
+    """
+    Функция для проверки типа колонки. Необходимо найти колонки с датой
+    :param i:
+    :param value:
+    :return:
+    """
+    try:
+        itog = pd.to_datetime(str(value), infer_datetime_format=True)
+    except:
+        pass
+    else:
+        return i
+
+def processing_date_column(df, lst_columns):
+    """
+    Функция для обработки столбцов с датами. конвертация в строку формата ДД.ММ.ГГГГ
+    """
+    # получаем первую строку
+    first_row = df.iloc[0, lst_columns]
+
+    lst_first_row = list(first_row)  # Превращаем строку в список
+    lst_date_columns = []  # Создаем список куда будем сохранять колонки в которых находятся даты
+    tupl_row = list(zip(lst_columns,
+                        lst_first_row))  # Создаем список кортежей формата (номер колонки,значение строки в этой колонке)
+
+    for idx, value in tupl_row:  # Перебираем кортеж
+        result = check_date_columns(idx, value)  # проверяем является ли значение датой
+        if result:  # если да то добавляем список порядковый номер колонки
+            lst_date_columns.append(result)
+        else:  # иначе проверяем следующее значение
+            continue
+    for i in lst_date_columns:  # Перебираем список с колонками дат, превращаем их в даты и конвертируем в нужный строковый формат
+        df.iloc[:, i] = pd.to_datetime(df.iloc[:, i], errors='coerce', dayfirst=True)
+        df.iloc[:, i] = df.iloc[:, i].apply(create_doc_convert_date)
+
+def clean_ending_columns(lst_columns:list,name_first_df,name_second_df):
+    """
+    Функция для очистки колонок таблицы с совпадающими данными от окончаний _x _y
+
+    :param lst_columns:
+    :param time_generate
+    :param name_first_df
+    :param name_second_df
+    :return:
+    """
+    out_columns = [] # список для очищенных названий
+    for name_column in lst_columns:
+        if '_x' in name_column:
+            # если они есть то проводим очистку и добавление времени
+            cut_name_column = name_column[:-2] # обрезаем
+            temp_name = f'{cut_name_column}_{name_first_df}' # соединяем
+            out_columns.append(temp_name) # добавляем
+        elif '_y' in name_column:
+            cut_name_column = name_column[:-2]  # обрезаем
+            temp_name = f'{cut_name_column}_{name_second_df}'  # соединяем
+            out_columns.append(temp_name)  # добавляем
+        else:
+            out_columns.append(name_column)
+    return out_columns
+
+def select_file_params_comparsion():
+    """
+    Функция для выбора файла с параметрами колонок т.е. кокие колонки нужно обрабатывать
+    :return:
+    """
+    global file_params
+    file_params = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
+
+def select_first_comparison():
+    """
+    Функция для выбора  первого файла с данными которые нужно сравнить
+    :return: Путь к файлу с данными
+    """
+    global name_first_file_comparison
+    # Получаем путь к файлу
+    name_first_file_comparison = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
+
+def select_second_comparison():
+    """
+    Функция для выбора  второго файла с данными которые нужно сравнить
+    :return: Путь к файлу с данными
+    """
+    global name_second_file_comparison
+    # Получаем путь к файлу
+    name_second_file_comparison = filedialog.askopenfilename(
+        filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
+def select_end_folder_comparison():
+    """
+    Функция для выбора папки куда будет генерироваться итоговый файл
+    :return:
+    """
+    global path_to_end_folder_comparison
+    path_to_end_folder_comparison = filedialog.askdirectory()
+
+
+def processing_comparison():
+    """
+    Функция для сравнения 2 колонок
+    :return:
+    """
+    try:
+        # Получаем значения текстовых полей
+        first_sheet_name = 'Абитуриенты'
+        second_sheet_name = 'Отчет'
+        # загружаем файлы
+        first_df = pd.read_excel(name_first_file_comparison, sheet_name=first_sheet_name, dtype=str,
+                                 keep_default_na=False,skiprows=3)
+        # получаем имя файла
+        name_first_df = name_first_file_comparison.split('/')[-1]
+        name_first_df = name_first_df.split('.xlsx')[0]
+
+        second_df = pd.read_excel(name_second_file_comparison, sheet_name=second_sheet_name, dtype=str,
+                                  keep_default_na=False,skiprows=3)
+        # получаем имя файла
+        name_second_df = name_second_file_comparison.split('/')[-1]
+        name_second_df = name_second_df.split('.xlsx')[0]
+
+        params = pd.read_excel(file_params, header=None, keep_default_na=False)
+
+        # Преврашаем каждую колонку в список
+        params_first_columns = params[0].tolist()
+        params_second_columns = params[1].tolist()
+
+        # Конвертируем в инт заодно проверяя корректность введенных данных
+        int_params_first_columns = convert_params_columns_to_int(params_first_columns)
+        int_params_second_columns = convert_params_columns_to_int(params_second_columns)
+
+        # Отнимаем 1 от каждого значения чтобы привести к питоновским индексам
+        int_params_first_columns = list(map(lambda x: x - 1, int_params_first_columns))
+        int_params_second_columns = list(map(lambda x: x - 1, int_params_second_columns))
+
+        # Конвертируем нужные нам колонки в str
+        convert_columns_to_str(first_df, int_params_first_columns)
+        convert_columns_to_str(second_df, int_params_second_columns)
+
+
+
+        # Проверяем наличие колонок с датами в списке колонок для объединения чтобы привести их в нормальный вид
+        for number_column_params in int_params_first_columns:
+            if 'дата' in first_df.columns[number_column_params].lower():
+                first_df.iloc[:, number_column_params] = pd.to_datetime(first_df.iloc[:, number_column_params],
+                                                                        errors='coerce', dayfirst=True)
+                first_df.iloc[:, number_column_params] = first_df.iloc[:, number_column_params].apply(
+                    create_doc_convert_date)
+
+        for number_column_params in int_params_second_columns:
+            if 'дата' in second_df.columns[number_column_params].lower():
+                second_df.iloc[:, number_column_params] = pd.to_datetime(second_df.iloc[:, number_column_params],
+                                                                         errors='coerce', dayfirst=True)
+                second_df.iloc[:, number_column_params] = second_df.iloc[:, number_column_params].apply(
+                    create_doc_convert_date)
+
+        # в этом месте конвертируем даты в формат ДД.ММ.ГГГГ
+        # processing_date_column(first_df, int_params_first_columns)
+        # processing_date_column(second_df, int_params_second_columns)
+
+        # Проверяем наличие колонки _merge
+        if '_merge' in first_df.columns:
+            first_df.drop(columns=['_merge'], inplace=True)
+        if '_merge' in second_df.columns:
+            second_df.drop(columns=['_merge'], inplace=True)
+        # Проверяем наличие колонки ID
+        if 'ID_объединения' in first_df.columns:
+            first_df.drop(columns=['ID_объединения'], inplace=True)
+        if 'ID_объединения' in second_df.columns:
+            second_df.drop(columns=['ID_объединения'], inplace=True)
+
+        # создаем датафреймы из колонок выбранных для объединения, такой способо связан с тем, что
+        # при использовании sum числа в строковом виде превращаются в числа
+        key_first_df = first_df.iloc[:,int_params_first_columns]
+        key_second_df = second_df.iloc[:,int_params_second_columns]
+        # Создаем в каждом датафрейме колонку с айди путем склеивания всех нужных колонок в одну строку
+        first_df['ID_объединения'] = key_first_df.apply(lambda x:''.join(x),axis=1)
+        second_df['ID_объединения'] = key_second_df.apply(lambda x: ''.join(x), axis=1)
+
+
+        first_df['ID_объединения'] = first_df['ID_объединения'].apply(lambda x: x.replace(' ', ''))
+        second_df['ID_объединения'] = second_df['ID_объединения'].apply(lambda x: x.replace(' ', ''))
+
+        # делаем прописными айди значения по которым будет вестись объединение
+        first_df['ID_объединения'] = first_df['ID_объединения'].apply(lambda x: x.upper())
+        second_df['ID_объединения'] = second_df['ID_объединения'].apply(lambda x: x.upper())
+
+        # В результат объединения попадают совпадающие по ключу записи обеих таблиц и все строки из этих двух таблиц, для которых пар не нашлось. Порядок таблиц в запросе не
+
+        # Создаем документ
+        wb = openpyxl.Workbook()
+        # создаем листы
+        ren_sheet = wb['Sheet']
+        ren_sheet.title = 'Только в тандеме'
+        wb.create_sheet(title='Только в госуслугах', index=1)
+        wb.create_sheet(title='В обеих таблицах', index=2)
+        # wb.create_sheet(title='Обновленная таблица', index=3)
+        # wb.create_sheet(title='Объединённая таблица', index=4)
+
+
+        # Создаем переменные содержащие в себе количество колонок в базовых датареймах
+        first_df_quantity_cols = len(first_df.columns)  # не забываем что там добавилась колонка ID
+
+        # Проводим слияние
+        itog_df = pd.merge(first_df, second_df, how='outer', left_on=['ID_объединения'], right_on=['ID_объединения'],
+                           indicator=True)
+
+        # копируем в отдельный датафрейм для создания таблицы с обновлениями
+        update_df = itog_df.copy()
+
+        # Записываем каждый датафрейм в соответсвующий лист
+        # Левая таблица
+        left_df = itog_df[itog_df['_merge'] == 'left_only']
+        left_df.drop(['_merge'], axis=1, inplace=True)
+
+        # Удаляем колонки второй таблицы чтобы не мешались
+        left_df.drop(left_df.iloc[:, first_df_quantity_cols:], axis=1, inplace=True)
+
+        # Переименовываем колонки у которых были совпадение во второй таблице, в таких колонках есть добавление _x
+        clean_left_columns = list(map(lambda x: x[:-2] if '_x' in x else x, list(left_df.columns)))
+        left_df.columns = clean_left_columns
+        for r in dataframe_to_rows(left_df, index=False, header=True):
+            wb['Только в тандеме'].append(r)
+
+        right_df = itog_df[itog_df['_merge'] == 'right_only']
+        right_df.drop(['_merge'], axis=1, inplace=True)
+
+        # Удаляем колонки первой таблицы таблицы чтобы не мешались
+        right_df.drop(right_df.iloc[:, :first_df_quantity_cols - 1], axis=1, inplace=True)
+
+        # Переименовываем колонки у которых были совпадение во второй таблице, в таких колонках есть добавление _x
+        clean_right_columns = list(map(lambda x: x[:-2] if '_y' in x else x, list(right_df.columns)))
+        right_df.columns = clean_right_columns
+
+        for r in dataframe_to_rows(right_df, index=False, header=True):
+            wb['Только в госуслугах'].append(r)
+
+        both_df = itog_df[itog_df['_merge'] == 'both']
+        both_df.drop(['_merge'], axis=1, inplace=True)
+        # Очищаем от _x  и _y
+        clean_both_columns = clean_ending_columns(list(both_df.columns), name_first_df, name_second_df)
+        both_df.columns = clean_both_columns
+
+        for r in dataframe_to_rows(both_df, index=False, header=True):
+            wb['В обеих таблицах'].append(r)
+
+        # Сохраняем общую таблицу
+        # Заменяем названия индикаторов на более понятные
+        itog_df['_merge'] = itog_df['_merge'].apply(lambda x: 'Данные из первой таблицы' if x == 'left_only' else
+        ('Данные из второй таблицы' if x == 'right_only' else 'Совпадающие данные'))
+        itog_df['_merge'] = itog_df['_merge'].astype(str)
+
+        clean_itog_df = clean_ending_columns(list(itog_df.columns), name_first_df, name_second_df)
+        itog_df.columns = clean_itog_df
+        # for r in dataframe_to_rows(itog_df, index=False, header=True):
+        #     wb['Объединённая таблица'].append(r)
+
+        # получаем список с совпадающими колонками первой таблицы
+        first_df_columns = [column for column in list(update_df.columns) if str(column).endswith('_x')]
+        # получаем список с совпадающими колонками второй таблицы
+        second_df_columns = [column for column in list(update_df.columns) if str(column).endswith('_y')]
+        # Создаем из списка совпадающих колонок второй таблицы словарь, чтобы было легче обрабатывать
+        # да конечно можно было сделать в одном выражении но как я буду читать это через 2 недели?
+        dct_second_columns = {column.split('_y')[0]: column for column in second_df_columns}
+
+        for column in first_df_columns:
+            # очищаем от _x
+            name_column = column.split('_x')[0]
+            # Обновляем значение в случае если в колонке _merge стоит both, иначе оставляем старое значение,
+            # Чтобы обновить значение в ячейке, во второй таблице не должно быть пустого значения или пробела в аналогичной колонке
+
+            update_df[column] = np.where(
+                (update_df['_merge'] == 'both') & (update_df[dct_second_columns[name_column]]) & (
+                            update_df[dct_second_columns[name_column]] != ' '),
+                update_df[dct_second_columns[name_column]], update_df[column])
+
+            # Удаляем колонки с _y
+        update_df.drop(columns=[column for column in update_df.columns if column.endswith('_y')], inplace=True)
+
+        # Переименовываем колонки с _x
+        update_df.columns = list(map(lambda x: x[:-2] if x.endswith('_x') else x, update_df.columns))
+
+        # удаляем строки с _merge == right_only
+        update_df = update_df[update_df['_merge'] != 'right_only']
+
+        # Удаляем служебные колонки
+        update_df.drop(columns=['ID_объединения', '_merge'], inplace=True)
+
+        # используем уже созданный датафрейм right_df Удаляем лишнюю колонку в right_df
+        right_df.drop(columns=['ID_объединения'], inplace=True)
+
+        # Добавляем нехватающие колонки
+        new_right_df = right_df.reindex(columns=update_df.columns, fill_value=None)
+
+        update_df = pd.concat([update_df, new_right_df])
+
+        # for r in dataframe_to_rows(update_df, index=False, header=True):
+        #     wb['Обновленная таблица'].append(r)
+
+        # генерируем текущее время
+        t = time.localtime()
+        current_time = time.strftime('%H_%M_%S', t)
+        # Сохраняем итоговый файл
+        wb.save(f'{path_to_end_folder_comparison}/Сравнение 2 таблиц от {current_time}.xlsx')
+        # # Сохраняем отдельно обновленную таблицу
+        # update_df.to_excel(
+        #     f'{path_to_end_folder_comparison}/Таблица с обновленными данными и колонками от {current_time}.xlsx',
+        #     index=False)
+
+    except NameError:
+        messagebox.showerror('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.5',
+                             f'Выберите файлы с данными и папку куда будет генерироваться файл')
+    except KeyError:
+        messagebox.showerror('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.5',
+                             f'В таблице нет такой колонки!\nПроверьте написание названия колонки')
+    except ValueError:
+        messagebox.showerror('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.5',
+                             f'В таблице нет листа с таким названием!\nПроверьте написание названия листа')
+
+    except FileNotFoundError:
+        messagebox.showerror('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.5',
+                             f'Перенесите файлы которые вы хотите обработать в корень диска. Проблема может быть\n '
+                             f'в слишком длинном пути к обрабатываемым файлам')
+    except:
+        messagebox.showerror('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.5',
+                             'Возникла ошибка!!! Подробности ошибки в файле error.log')
+    else:
+        messagebox.showinfo('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.5', 'Данные успешно обработаны')
+
+
 
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.4')
+    window.title('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.5')
     window.geometry('700x660')
     window.resizable(False, False)
 
@@ -308,5 +692,66 @@ if __name__ == '__main__':
                                   command=processing_report
                                   )
     btn_proccessing_data.grid(column=0, row=5, padx=10, pady=10)
+
+    """
+    Слияние 2 таблиц
+    """
+    tab_comparison = ttk.Frame(tab_control)
+    tab_control.add(tab_comparison, text='Сравнение 2 таблиц')
+    tab_control.pack(expand=1, fill='both')
+
+    # Добавляем виджеты на вкладку Создание документов
+    # Создаем метку для описания назначения программы
+    lbl_hello = Label(tab_comparison,
+                      text='Центр опережающей профессиональной подготовки Республики Бурятия\n'
+                           '\nДля корректной работы программмы уберите из таблицы объединенные ячейки')
+    lbl_hello.grid(column=0, row=0, padx=10, pady=25)
+
+    # Картинка
+    path_com = resource_path('logo.png')
+    img_comparison = PhotoImage(file=path_com)
+    Label(tab_comparison,
+          image=img
+          ).grid(column=1, row=0, padx=10, pady=25)
+
+    # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
+    frame_data_for_comparison = LabelFrame(tab_comparison, text='Подготовка')
+    frame_data_for_comparison.grid(column=0, row=2, padx=10)
+
+    # Создаем кнопку выбрать файл с параметрами
+    btn_columns_params = Button(frame_data_for_comparison, text='1) Выберите файл с параметрами сравнения',
+                                font=('Arial Bold', 10),
+                                command=select_file_params_comparsion)
+    btn_columns_params.grid(column=0, row=3, padx=10, pady=10)
+
+    # Создаем кнопку Выбрать  первый файл с данными
+    btn_data_first_comparison = Button(frame_data_for_comparison, text='2) Выберите файл с главной страницы',
+                                       font=('Arial Bold', 10),
+                                       command=select_first_comparison
+                                       )
+    btn_data_first_comparison.grid(column=0, row=4, padx=10, pady=10)
+
+    # Создаем кнопку Выбрать  второй файл с данными
+    btn_data_second_comparison = Button(frame_data_for_comparison, text='4) Выберите файл с госуслуг',
+                                        font=('Arial Bold', 10),
+                                        command=select_second_comparison
+                                        )
+    btn_data_second_comparison.grid(column=0, row=7, padx=10, pady=10)
+
+
+    # Создаем кнопку выбора папки куда будет генерироваьться файл
+    btn_select_end_comparison = Button(frame_data_for_comparison, text='5) Выберите конечную папку',
+                                       font=('Arial Bold', 10),
+                                       command=select_end_folder_comparison
+                                       )
+    btn_select_end_comparison.grid(column=0, row=10, padx=10, pady=10)
+
+    # Создаем кнопку Обработать данные
+    btn_data_do_comparison = Button(tab_comparison, text='6) Обработать данные', font=('Arial Bold', 20),
+                                    command=processing_comparison
+                                    )
+    btn_data_do_comparison.grid(column=0, row=11, padx=10, pady=10)
+
+
 
     window.mainloop()
