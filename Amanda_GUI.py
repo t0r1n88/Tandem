@@ -67,38 +67,42 @@ def processing_report():
     """
     try:
         # создаем датафрейм со специальностями
-        lst_code = ['23.01.09','43.01.06','23.02.06','43.02.06','15.01.05','15.01.35','15.01.33','23.01.10'
-            ,'08.01.31','23.01.17','08.02.09','23.02.07','13.02.07','35.01.27']
+        lst_code = ['23.01.09', '43.01.06', '23.02.06', '43.02.06', '15.01.05', '15.01.35', '15.01.33', '23.01.10'
+            , '08.01.31', '23.01.17', '08.02.09', '23.02.07', '13.02.07', '35.01.27']
 
-        lst_name_spec = ['Машинист локомотива','Проводник на железнодорожном транспорте','Техническая эксплуатация подвижного состава железных дорог',
-                         'Сервис на транспорте (по видам транспорта)','Сварщик (ручной и частично механизированной сварки (наплавки)',
-                         'Мастер слесарных работ','Токарь на станках с числовым программным управлением','Слесарь по обслуживанию и ремонту подвижного состава'
-            ,'Электромонтажник электрических сетей и электрооборудования','Мастер по ремонту и обслуживанию автомобилей',
+        lst_name_spec = ['Машинист локомотива', 'Проводник на железнодорожном транспорте',
+                         'Техническая эксплуатация подвижного состава железных дорог',
+                         'Сервис на транспорте (по видам транспорта)',
+                         'Сварщик (ручной и частично механизированной сварки (наплавки)',
+                         'Мастер слесарных работ', 'Токарь на станках с числовым программным управлением',
+                         'Слесарь по обслуживанию и ремонту подвижного состава'
+            , 'Электромонтажник электрических сетей и электрооборудования',
+                         'Мастер по ремонту и обслуживанию автомобилей',
                          'Монтаж, наладка и эксплуатация электрооборудования промышленных и гражданских зданий',
-                         'Техническое обслуживание и ремонт двигателей, систем и агрегатов автомобилей','Электроснабжение (по отраслям)',
+                         'Техническое обслуживание и ремонт двигателей, систем и агрегатов автомобилей',
+                         'Электроснабжение (по отраслям)',
                          'Мастер сельскохозяйственного производства']
 
-        lst_plan = [100,25,25,25,50,25,25,50
-            ,25,25,25,25,25,25]
-        base_df = pd.DataFrame(columns=['Код','Наименование'])
+        lst_plan = [100, 25, 25, 25, 50, 25, 25, 50
+            , 25, 25, 25, 25, 25, 25]
+        base_df = pd.DataFrame(columns=['Код', 'Наименование'])
         base_df['Код'] = lst_code
         base_df['Наименование'] = lst_name_spec
         base_df['Направление подготовки'] = base_df['Код'] + ' ' + base_df['Наименование']
         base_df['База'] = '9 кл.'
         base_df['Количество мест'] = lst_plan
 
-
-
-
-        df_abitur = pd.read_excel(name_file_abiturs, skiprows=3, usecols=['Абитуриент', 'Доп. статус', 'Состояние'])
+        df_abitur = pd.read_excel(name_file_abiturs, skiprows=3, usecols=['Абитуриент', 'Доп. статус', '№ заявления'])
         df_person = pd.read_excel(name_file_person, sheet_name='Абитуриенты', skiprows=8,
                                   usecols=['ФИО', 'Нуждается в общежитии', 'Формирующее подр.',
-                                           'Направление подготовки', 'Сдан оригинал'])
+                                           'Направление подготовки', 'Сдан оригинал', 'Состояние выбран. конкурса',
+                                           'СНИЛС'])
 
         df_person = df_person[~df_person['Направление подготовки'].isnull()]  # убираем тех у кого нет заявлений
+        df_abitur = df_abitur[~df_abitur['№ заявления'].isnull()]
 
-        df_dupl = df_person.drop_duplicates(subset='ФИО')  # создаем датафрейм без дубликатов
 
+        df_dupl = df_person.drop_duplicates(subset=['ФИО'])  # создаем датафрейм без дубликатов
 
         dupl_cross_df = df_dupl.merge(df_abitur, how='inner', left_on='ФИО', right_on='Абитуриент')
 
@@ -106,15 +110,13 @@ def processing_report():
         dupl_cross_df['Нуждается в общежитии'] = dupl_cross_df['Нуждается в общежитии'].apply(
             lambda x: 0 if x == 'нет' else 1)
         dupl_cross_df['Сдан оригинал'] = dupl_cross_df['Сдан оригинал'].apply(lambda x: 0 if x == 'нет' else 1)
-        dupl_cross_df['Состояние'] = dupl_cross_df['Состояние'].apply(lambda x: 1 if x == 'Забрал документы' else 0)
-
-
         # заменяем нан на пустые строки чтобы произвести поиск слова сирота;
         dupl_cross_df['Доп. статус'].fillna('', inplace=True)
         dupl_cross_df['Сироты'] = dupl_cross_df['Доп. статус'].apply(lambda x: 1 if 'Сирота;' in x else 0)
         dupl_cross_df['СВО'] = dupl_cross_df['Доп. статус'].apply(
             lambda x: 1 if 'Дети военнослужащих, участвующих в спецоперации' in x else 0)
-        dupl_cross_df['Целевой договор'] = dupl_cross_df['Доп. статус'].apply(lambda x: 1 if 'Целевой договор' in x else 0)
+        dupl_cross_df['Целевой договор'] = dupl_cross_df['Доп. статус'].apply(
+            lambda x: 1 if 'Целевой договор' in x else 0)
 
         dupl_cross_df['for_counting'] = 1
 
@@ -122,31 +124,27 @@ def processing_report():
 
         dupl_svod_df = pd.DataFrame.pivot_table(dupl_cross_df,
                                                 index=['Формирующее подр.', 'Направление подготовки'],
-                                                values=['for_counting', 'Состояние', 'Сдан оригинал', 'Сироты', 'СВО','Целевой договор',
+                                                values=['Сдан оригинал', 'Сироты', 'СВО', 'Целевой договор',
                                                         'Нуждается в общежитии'],
                                                 aggfunc='sum')
 
-        dupl_svod_df.columns = ['Заявлений', 'Нуждается в общежитии чел.', 'Дети СВО', 'Сдано оригиналов', 'Сирот чел.',
-                                'Забрали заявления','Целевой договор']
+        dupl_svod_df.columns = ['Нуждается в общежитии чел.', 'Дети СВО', 'Сдано оригиналов', 'Сирот чел.',
+                                'Целевой договор']
 
-        dupl_svod_df['Итого заявлений'] = dupl_svod_df['Заявлений'] - dupl_svod_df['Забрали заявления']
-
-        dupl_svod_df['Итого заявлений'] = dupl_svod_df['Заявлений'] - dupl_svod_df['Забрали заявления']
         # Меняем местами столбцы
         single_out_df = dupl_svod_df.reindex(
-            columns=['Заявлений', 'Забрали заявления', 'Итого заявлений', 'Сдано оригиналов',
+            columns=['Сдано оригиналов',
                      'Нуждается в общежитии чел.',
-                     'Сирот чел.', 'Дети СВО','Целевой договор'])
-
+                     'Сирот чел.', 'Дети СВО', 'Целевой договор'])
 
         # Соединяем оба датафрейма
 
         cross_df = df_person.merge(df_abitur, how='inner', left_on='ФИО', right_on='Абитуриент')
 
+
         # Преобразовываем да-нет в 1 или 0 для подсчетов
         cross_df['Нуждается в общежитии'] = cross_df['Нуждается в общежитии'].apply(lambda x: 0 if x == 'нет' else 1)
         cross_df['Сдан оригинал'] = cross_df['Сдан оригинал'].apply(lambda x: 0 if x == 'нет' else 1)
-        cross_df['Состояние'] = cross_df['Состояние'].apply(lambda x: 1 if x == 'Забрал документы' else 0)
 
         # заменяем нан на пустые строки чтобы произвести поиск слова сирота;
         cross_df['Доп. статус'].fillna('', inplace=True)
@@ -159,59 +157,48 @@ def processing_report():
         cross_df.drop(columns=['Доп. статус'], inplace=True)
 
         # Создаем сокращенный датафрейм чтобы добавить его в базовый
-        small_df = cross_df[['Направление подготовки','for_counting']]
+        small_df = cross_df[['Направление подготовки', 'Состояние выбран. конкурса', 'for_counting']]
 
         # объединяем датафреймы
-        union_df = base_df.merge(small_df,how='outer',left_on='Направление подготовки',right_on='Направление подготовки')
-        union_df.fillna(0,inplace=True)
+        union_df = base_df.merge(small_df, how='outer', left_on='Направление подготовки',
+                                 right_on='Направление подготовки')
+        union_df.fillna(0, inplace=True)
 
-        base_df_groupby = union_df.groupby(['Наименование']).agg({'for_counting':sum})
+        # забранные заявления
+        return_z = union_df[union_df['Состояние выбран. конкурса'] == 'Забрал документы']
+
+        base_df_groupby = union_df.groupby(['Направление подготовки']).agg({'for_counting': sum})
         base_df_groupby['for_counting'] = base_df_groupby['for_counting'].apply(int)
         base_df_groupby = base_df_groupby.reset_index()
-        base_df_groupby.rename(columns={'for_counting':'Подано заявлений'},inplace=True)
+        base_df_groupby.rename(columns={'for_counting': 'Подано заявлений'}, inplace=True)
 
-        base_df = base_df.merge(base_df_groupby,how='inner',left_on='Наименование',right_on='Наименование')
-        base_df.sort_values(by='Наименование',inplace=True)
-        base_df.rename(columns={'Наименование':'Наименование образовательной программы'})
-        base_df.drop(columns='Направление подготовки',inplace=True)
+        base_df = base_df.merge(base_df_groupby, how='inner', left_on='Направление подготовки',
+                                right_on='Направление подготовки')
+        base_df.sort_values(by='Подано заявлений', ascending=False, inplace=True)
 
 
+        base_df.rename(columns={'Наименование': 'Наименование образовательной программы'})
+        base_df.drop(columns='Направление подготовки', inplace=True)
+
+        # считаем количество тех кто забрал документы
+        cross_df['Забрали заявления'] = cross_df['Состояние выбран. конкурса'].apply(
+            lambda x: 1 if x == 'Забрал документы' else 0)
+        cross_df['Заявления'] = cross_df['for_counting']
 
         svod_df = pd.DataFrame.pivot_table(cross_df,
                                            index=['Формирующее подр.', 'Направление подготовки'],
-                                           values=['for_counting', 'Состояние', 'Сдан оригинал', 'Сироты', 'СВО',
-                                                   'Нуждается в общежитии'],
+                                           values=['Заявления', 'Забрали заявления', ],
                                            aggfunc='sum')
 
-        svod_df.columns = ['Заявлений', 'Нуждается в общежитии чел.', 'Дети СВО', 'Сдано оригиналов', 'Сирот чел.',
-                           'Забрали заявления']
+        svod_df = svod_df.reindex(columns=['Заявления', 'Забрали заявления'])
 
-        svod_df['Итого заявлений'] = svod_df['Заявлений'] - svod_df['Забрали заявления']
+        svod_df['Итого заявлений'] = svod_df['Заявления'] - svod_df['Забрали заявления']
 
-        svod_df['Итого заявлений'] = svod_df['Заявлений'] - svod_df['Забрали заявления']
-        # Меняем местами столбцы
-        out_df = svod_df.reindex(columns=['Заявлений', 'Забрали заявления', 'Итого заявлений', 'Сдано оригиналов',
-                                          'Нуждается в общежитии чел.',
-                                          'Сирот чел.', 'Дети СВО'])
-
-        out_df = out_df.reset_index()
-
-        out_df = out_df.iloc[:, :5]
-
-
-        single_out_df = single_out_df.iloc[:, 3:]
+        out_df = svod_df.reset_index()
 
         single_out_df = single_out_df.reset_index()
 
-
         finish_df = pd.merge(out_df, single_out_df, how='outer')  # объединяем
-
-
-        finish_df.fillna(0, inplace=True)
-
-
-        finish_df.iloc[:, 2:] = finish_df.iloc[:, 2:].applymap(int)
-
 
         wb = openpyxl.Workbook()
         # Переименовываем лист
@@ -246,8 +233,19 @@ def processing_report():
         t = time.localtime()
         current_time = time.strftime('%H_%M_%d_%m', t)
         # Сохраняем итоговый файл
-        base_df.to_excel(f'{path_to_end_folder_report}/Количество поданых заявлений {current_time}.xlsx',index=False)
+        base_df.to_excel(f'{path_to_end_folder_report}/Количество поданых заявлений {current_time}.xlsx', index=False)
         wb.save(f'{path_to_end_folder_report}/Ежедневный отчет приемной комиссии ГБПОУ БРИТ {current_time}.xlsx')
+
+        # ищем полных тезок
+        temp_dupl_df = df_person.drop_duplicates(subset=['ФИО', 'СНИЛС'])
+
+        tezki_df = temp_dupl_df[temp_dupl_df.duplicated(subset='ФИО', keep=False)]
+
+        tezki_df.to_excel(f'{path_to_end_folder_report}/Полные тезки {current_time}.xlsx', index=False)
+
+
+
+
 
 
 
