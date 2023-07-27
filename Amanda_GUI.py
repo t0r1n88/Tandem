@@ -39,6 +39,16 @@ def select_end_folder():
     global path_to_end_folder_report
     path_to_end_folder_report = filedialog.askdirectory()
 
+
+def select_end_folder_machine():
+    """
+    Функция для выбора конечной папки куда будут складываться итоговые файлы
+    :return:
+    """
+    global path_to_end_folder
+    path_to_end_folder = filedialog.askdirectory()
+
+
 def select_file_data_abitur():
     """
     Функция для выбора файла с данными на основе которых будет генерироваться документ
@@ -58,6 +68,146 @@ def select_file_data_person():
     # Получаем путь к файлу
     name_file_person = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
 
+"""
+Функции для машинистов
+"""
+def select_file_data_abitur_machine():
+    """
+    Функция для выбора файла с данными на основе которых будет генерироваться документ
+    :return: Путь к файлу с данными
+    """
+    global path_to_person
+    # Получаем путь к файлу
+    path_to_person = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
+def select_file_data_divde():
+    """
+    Функция для выбора файла с данными на основе которых будет генерироваться документ
+    :return: Путь к файлу с данными
+    """
+    global path_to_machine
+    # Получаем путь к файлу
+    path_to_machine = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
+def select_file_data_reit():
+    """
+    Функция для выбора файла с данными на основе которых будет генерироваться документ
+    :return: Путь к файлу с данными
+    """
+    global path_to_reit
+    # Получаем путь к файлу
+    path_to_reit = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
+def processing_reit_machine():
+    try:
+        machine_df = pd.read_excel(path_to_machine)  # распредление по специальностям
+        reit_df = pd.read_excel(path_to_reit, skiprows=4, header=None)  # файл с таблицей из ворда
+        df_person = pd.read_excel(path_to_person, sheet_name='Абитуриенты', skiprows=8)  # данные абитуриентов
+
+        # генерируем текущее время
+        t = time.localtime()
+        current_time = time.strftime('%H_%M_%S', t)
+
+        # создаем два датафрейма для электровозников и тепловозников
+        teplo_df = machine_df[['тепловоз', 'атт.1', 'мед справка.1']]
+        teplo_df.dropna(axis=0, inplace=True)
+        # очищаем от пробельных символов
+        teplo_df['тепловоз'] = teplo_df['тепловоз'].apply(lambda x: x.strip())
+        elect_df = machine_df[['электровоз', 'атт', 'мед справка']]
+        elect_df['электровоз'] = elect_df['электровоз'].apply(lambda x: x.strip())
+
+        # создаем файл с общим списком
+        temp_lst = teplo_df['тепловоз'].tolist()
+        temp_lst.extend(elect_df['электровоз'].tolist())
+
+        temp_df = pd.DataFrame(columns=['ФИО общее'])
+
+        temp_df['ФИО общее'] = temp_lst
+
+        snils_df = df_person[['ФИО', 'СНИЛС']]
+
+        snils_df = snils_df.drop_duplicates(subset='ФИО')  # убираем дубликаты
+
+        union_df = snils_df.merge(reit_df, how='outer', left_on='СНИЛС', right_on=1,
+                                  indicator=True)  # объединяем датафреймы
+
+        # сохраняем тех  у кого нет снилс
+        not_snils = union_df[union_df['_merge'] == 'right_only']  # сохраяем тех у кого нет снилса
+        not_snils.rename(columns={1: 'Личный номер'}, inplace=True)
+        not_snils = not_snils[['Личный номер']]
+
+        clean_reit = union_df[union_df['_merge'] == 'both']  # отбираем тех кто есть в обоих датафреймах
+
+        clean_reit = clean_reit[['ФИО', 'СНИЛС', 2, 5]]
+
+        # Ищем тех кого нет в файле приемки
+        missing_priemka = clean_reit.merge(temp_df, how='outer', left_on='ФИО', right_on='ФИО общее', indicator=True)
+
+        # файл где содержатся ФИО тех кто есть в рейтинге но кого нет в файле приемки
+        not_in_priemka = missing_priemka[missing_priemka['_merge'] == 'left_only']
+        not_in_priemka.drop(columns=['ФИО общее', '_merge'], inplace=True)
+        not_in_priemka.rename(columns={2: 'Приоритет', 5: 'Средний балл'}, inplace=True)
+
+        raw_teplo_df = clean_reit.merge(teplo_df, how='outer', left_on='ФИО', right_on='тепловоз', indicator=True)
+
+        zabr_df_teplo = raw_teplo_df[raw_teplo_df['_merge'] == 'right_only']  # те кто забрал документы
+        zabr_df_teplo.drop(columns=['ФИО', 'СНИЛС', 2, 5, '_merge'], inplace=True)
+
+        # электровозы
+        raw_electo_df = clean_reit.merge(elect_df, how='outer', left_on='ФИО', right_on='электровоз', indicator=True)
+        zabr_df_electo = raw_electo_df[raw_electo_df['_merge'] == 'right_only']  # те кто забрал документы
+        zabr_df_electo.drop(columns=['ФИО', 'СНИЛС', 2, 5, '_merge'], inplace=True)
+
+        clean_teplo_df = raw_teplo_df[raw_teplo_df['_merge'] == 'both']  # готовим итоговыйй тепловозник
+        clean_teplo_df.drop(columns=['тепловоз', '_merge'], inplace=True)
+
+        clean_teplo_df.columns = ['ФИО', 'СНИЛС', 'Приоритет', 'Средний балл', 'Сдан оригинал', 'Мед.справка']
+
+        clean_teplo_df['Приоритет'] = clean_teplo_df['Приоритет'].astype(int)
+        clean_teplo_df.sort_values(by='Средний балл', ascending=False, inplace=True)  # сортируем по убыванию
+        snils_teplo_df = clean_teplo_df.drop(columns='ФИО')
+
+        # добавляем правильный индекс
+        clean_teplo_df.index = range(1, clean_teplo_df.shape[0] + 1)
+        snils_teplo_df.index = range(1, snils_teplo_df.shape[0] + 1)
+        clean_teplo_df.index.name = '№'
+        snils_teplo_df.index.name = '№'
+
+        # готовим итоговый электровозник
+        clean_electo_df = raw_electo_df[raw_electo_df['_merge'] == 'both']  # готовим итоговыйй тепловозник
+        clean_electo_df.drop(columns=['электровоз', '_merge'], inplace=True)
+
+        clean_electo_df.columns = ['ФИО', 'СНИЛС', 'Приоритет', 'Средний балл', 'Сдан оригинал', 'Мед.справка']
+
+        clean_electo_df['Приоритет'] = clean_electo_df['Приоритет'].astype(int)
+        clean_electo_df.sort_values(by='Средний балл', ascending=False, inplace=True)  # сортируем по убыванию
+        snils_electo_df = clean_electo_df.drop(columns='ФИО')
+
+        clean_electo_df.index = range(1, clean_electo_df.shape[0] + 1)
+        snils_electo_df.index = range(1, snils_electo_df.shape[0] + 1)
+        clean_electo_df.index.name = '№'
+        snils_electo_df.index.name = '№'
+
+        with pd.ExcelWriter(f'{path_to_end_folder}/Проверка {current_time}.xlsx') as writer:
+            not_snils.to_excel(writer, sheet_name='Нет СНИЛС', index=False)
+            not_in_priemka.to_excel(writer, sheet_name='Нет в вашем файле', index=False)
+            zabr_df_teplo.to_excel(writer, sheet_name='Тепловоз,нет в рейтинге', index=False)
+            zabr_df_electo.to_excel(writer, sheet_name='Электровоз,нет в рейтинге', index=False)
+
+        with pd.ExcelWriter(f'{path_to_end_folder}/Рейтинговые списки Электровоз {current_time}.xlsx') as writer:
+            snils_electo_df.to_excel(writer, sheet_name='СНИЛС')
+            clean_electo_df.to_excel(writer, sheet_name='ФИО')
+
+        with pd.ExcelWriter(f'{path_to_end_folder}/Рейтинговые списки Тепловоз {current_time}.xlsx') as writer:
+            snils_teplo_df.to_excel(writer, sheet_name='СНИЛС')
+            clean_teplo_df.to_excel(writer, sheet_name='ФИО')
+
+    except NameError:
+        messagebox.showerror('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.6',
+                             'Выберите файлы для обработки и конечную папку!')
+    else:
+        messagebox.showinfo('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.6',
+                            'Создание отчета успешно завершено!')
 
 
 def processing_report():
@@ -242,10 +392,6 @@ def processing_report():
         tezki_df = temp_dupl_df[temp_dupl_df.duplicated(subset='ФИО', keep=False)]
 
         tezki_df.to_excel(f'{path_to_end_folder_report}/Полные тезки {current_time}.xlsx', index=False)
-
-
-
-
 
 
 
@@ -649,7 +795,7 @@ if __name__ == '__main__':
 
     # Создаем вкладку обработки данных для Приложения 6
     tab_report = ttk.Frame(tab_control)
-    tab_control.add(tab_report, text='Скрипт №1')
+    tab_control.add(tab_report, text='Ежедневные отчеты')
     tab_control.pack(expand=1, fill='both')
     # Добавляем виджеты на вкладку Создание образовательных программ
     # Создаем метку для описания назначения программы
@@ -692,10 +838,63 @@ if __name__ == '__main__':
     btn_proccessing_data.grid(column=0, row=5, padx=10, pady=10)
 
     """
+    Создаем вкладку для машинистов
+    """
+    #Создаем вкладку обработки данных для Приложения 6
+    tab_machine = ttk.Frame(tab_control)
+    tab_control.add(tab_machine, text='Машинисты')
+    tab_control.pack(expand=1, fill='both')
+    # Добавляем виджеты на вкладку Создание образовательных программ
+    # Создаем метку для описания назначения программы
+    lbl_hello = Label(tab_machine,
+                      text='Центр опережающей профессиональной подготовки Республики Бурятия\nПрограмма для создания отчета приемной комиссии директору\nГБПОУ БРИТ')
+    lbl_hello.grid(column=0, row=0, padx=10, pady=25)
+
+    # Картинка
+    path_to_img_machine = resource_path('logo.png')
+
+    img_machine = PhotoImage(file=path_to_img_machine)
+    Label(tab_machine,
+          image=img_machine
+          ).grid(column=1, row=0, padx=10, pady=25)
+
+    # Создаем кнопку Выбрать файл с данными абитуриентов
+    btn_choose_data_abitur_machine = Button(tab_machine, text='1) Выберите файл выборки', font=('Arial Bold', 20),
+                                    command=select_file_data_abitur_machine
+                                    )
+    btn_choose_data_abitur_machine.grid(column=0, row=2, padx=10, pady=10)
+
+    # Создаем кнопку Выбрать файл с данными разделения на машинистов и электровозников
+    btn_choose_data_divide = Button(tab_machine, text='2) Выберите ваш файл', font=('Arial Bold', 20),
+                                    command=select_file_data_divde
+                                    )
+    btn_choose_data_divide.grid(column=0, row=3, padx=10, pady=10)
+
+    # Создаем кнопку Выбрать файл с данными рейтинга машинистов
+    btn_choose_data_reit = Button(tab_machine, text='3) Файл из рейтинга', font=('Arial Bold', 20),
+                                    command=select_file_data_reit
+                                    )
+    btn_choose_data_reit.grid(column=0, row=4, padx=10, pady=10)
+
+    # Создаем кнопку для выбора папки куда будут генерироваться файлы
+
+    btn_choose_end_folder = Button(tab_machine, text='5) Выберите конечную папку', font=('Arial Bold', 20),
+                                   command=select_end_folder_machine
+                                   )
+    btn_choose_end_folder.grid(column=0, row=5, padx=10, pady=10)
+
+    # Создаем кнопку обработки данных
+
+    btn_proccessing_machine = Button(tab_machine, text='6) Создать списки', font=('Arial Bold', 20),
+                                  command=processing_reit_machine
+                                  )
+    btn_proccessing_machine.grid(column=0, row=6, padx=10, pady=10)
+
+    """
     Слияние 2 таблиц
     """
     tab_comparison = ttk.Frame(tab_control)
-    tab_control.add(tab_comparison, text='Сравнение 2 таблиц')
+    tab_control.add(tab_comparison, text='Сравнение с госуслугами')
     tab_control.pack(expand=1, fill='both')
 
     # Добавляем виджеты на вкладку Создание документов
