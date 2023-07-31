@@ -111,9 +111,15 @@ def processing_reit_machine():
         # создаем два датафрейма для электровозников и тепловозников
         teplo_df = machine_df[['тепловоз', 'атт.1', 'мед справка.1']]
         teplo_df.dropna(axis=0, inplace=True)
+
+        # заполняем пустые строки
+        teplo_df['тепловоз'] = teplo_df['тепловоз'].fillna('Не заполнено ФИО')
+
         # очищаем от пробельных символов
         teplo_df['тепловоз'] = teplo_df['тепловоз'].apply(lambda x: x.strip())
         elect_df = machine_df[['электровоз', 'атт', 'мед справка']]
+
+        elect_df['электровоз'] = elect_df['электровоз'].fillna('Не заполнено ФИО')
         elect_df['электровоз'] = elect_df['электровоз'].apply(lambda x: x.strip())
 
         # создаем файл с общим списком
