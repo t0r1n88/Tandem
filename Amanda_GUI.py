@@ -427,9 +427,8 @@ def processing_report():
         wb.save(f'{path_to_end_folder_report}/Ежедневный отчет приемной комиссии ГБПОУ БРИТ {current_time}.xlsx')
 
         # ищем полных тезок
-        temp_dupl_df = df_person.drop_duplicates(subset=['ФИО', 'СНИЛС'])
-
-        tezki_df = temp_dupl_df[temp_dupl_df.duplicated(subset='ФИО', keep=False)]
+        temp_df = df_person.drop_duplicates(subset=['ФИО','СНИЛС'])
+        tezki_df = temp_df[temp_df.duplicated(subset='ФИО', keep=False)]
 
         tezki_df.to_excel(f'{path_to_end_folder_report}/Полные тезки {current_time}.xlsx', index=False)
 
