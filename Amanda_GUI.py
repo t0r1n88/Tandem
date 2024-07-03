@@ -280,7 +280,6 @@ def processing_report():
         base_df['Направление подготовки'] = base_df['Код'] + ' ' + base_df['Наименование']
         base_df['База'] = '9 кл.'
         base_df['Количество мест'] = dct_kcp.values()
-        base_df.to_excel('dad.xlsx',index=False)
 
         df_abitur = pd.read_excel(name_file_abiturs, skiprows=3, usecols=['Абитуриент', 'Доп. статус', '№ заявления'])
         df_person = pd.read_excel(name_file_person, sheet_name='Абитуриенты', skiprows=8,
