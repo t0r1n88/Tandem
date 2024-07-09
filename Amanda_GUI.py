@@ -824,7 +824,7 @@ def processing_comparison():
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.8')
+    window.title('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.9')
     window.geometry('700x660')
     window.resizable(False, False)
 
