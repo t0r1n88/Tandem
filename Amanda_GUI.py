@@ -375,6 +375,19 @@ def processing_report():
 
         finish_df = pd.merge(out_df, single_out_df, how='inner')  # объединяем
 
+        # Добавляем колонку с количеством мест
+
+        finish_df = pd.merge(finish_df, base_df, how='inner',left_on='Набор ОП',right_on='Конкурс')
+        finish_df.insert(2,'КЦП',finish_df['Количество мест'])
+
+
+        # удаляем лишние
+        finish_df.drop(columns=['Код','Наименование','База','Подано заявлений','Количество мест'],inplace=True)
+
+        finish_df.rename(columns={'Формирующее подр.':'Отделение','Набор ОП':'Конкурс'},inplace=True)
+
+        finish_df = finish_df.iloc[:,:-1]
+
         wb = openpyxl.Workbook()
         # Переименовываем лист
         sheet = wb['Sheet']
@@ -382,13 +395,15 @@ def processing_report():
 
         sum_row = finish_df.sum(axis=0).to_frame().transpose()
 
-        sum_row['Формирующее подр.'] = 'Всего'
-        sum_row['Набор ОП'] = ''
+        sum_row['Отделение'] = 'Всего'
+        sum_row['Конкурс'] = ''
 
         # объединяем датафреймы
 
         all_finish_df = pd.concat([finish_df, sum_row], axis=0)
+        all_finish_df.insert(6, 'Чел/место', round(finish_df['Итого заявлений'] / finish_df['КЦП'], 2))
 
+        all_finish_df.iloc[-1,6] = round(all_finish_df.iloc[-1,5] / all_finish_df.iloc[-1,2],2)
         for r in dataframe_to_rows(all_finish_df, index=False, header=True):
             if len(r) != 1:
                 wb['Отчет'].append(r)
@@ -408,8 +423,8 @@ def processing_report():
         t = time.localtime()
         current_time = time.strftime('%H_%M_%d_%m', t)
         # Сохраняем итоговый файл
-        base_df.drop(columns=['Код','Наименование'],inplace=True)
-        base_df.to_excel(f'{path_to_end_folder_report}/Количество поданых заявлений {current_time}.xlsx', index=False)
+        # base_df.drop(columns=['Код','Наименование'],inplace=True)
+        # base_df.to_excel(f'{path_to_end_folder_report}/Количество поданых заявлений {current_time}.xlsx', index=False)
         wb.save(f'{path_to_end_folder_report}/Ежедневный отчет приемной комиссии ГБПОУ БРИТ {current_time}.xlsx')
 
         # ищем полных тезок
