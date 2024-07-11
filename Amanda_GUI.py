@@ -15,9 +15,9 @@ import time
 import datetime
 # pd.options.mode.chained_assignment = None  # default='warn'
 import warnings
+
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 pd.options.mode.chained_assignment = None  # default='warn'
-
 
 
 def resource_path(relative_path):
@@ -30,6 +30,7 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
 
     return os.path.join(base_path, relative_path)
+
 
 def select_end_folder():
     """
@@ -68,9 +69,12 @@ def select_file_data_person():
     # Получаем путь к файлу
     name_file_person = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
 
+
 """
 Функции для машинистов
 """
+
+
 def select_file_data_abitur_machine():
     """
     Функция для выбора файла с данными на основе которых будет генерироваться документ
@@ -79,6 +83,7 @@ def select_file_data_abitur_machine():
     global path_to_person
     # Получаем путь к файлу
     path_to_person = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
 
 def select_file_data_divde():
     """
@@ -89,6 +94,7 @@ def select_file_data_divde():
     # Получаем путь к файлу
     path_to_machine = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
 
+
 def select_file_data_reit():
     """
     Функция для выбора файла с данными на основе которых будет генерироваться документ
@@ -97,6 +103,7 @@ def select_file_data_reit():
     global path_to_reit
     # Получаем путь к файлу
     path_to_reit = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
 
 def processing_reit_machine():
     try:
@@ -222,41 +229,41 @@ def processing_report():
     :return:
     """
     try:
-        dct_code_name = {'08.01.31':'Электромонтажник электрических сетей и электрооборудования',
-                         '08.02.09':'Монтаж, наладка и эксплуатация электрооборудования промышленных и гражданских зданий',
-                         '13.02.07':'Электроснабжение (по отраслям)',
-                         '13.02.13':'Эксплуатация и обслуживание электрического и электромеханического оборудования (по отраслям)',
-                         '15.01.05':'Сварщик (ручной и частично механизированной сварки (наплавки)',
-                         '15.01.05 Сварщик (ручной и частично механизированной сварки (наплавки) Хоринский филиал':'',
-                         '15.01.35':'Мастер слесарных работ',
-                         '15.02.16':' Технология машиностроения',
-                         'Электровоз. 23.01.09':'Машинист локомотива',
-                         'Тепловоз. 23.01.09':'Машинист локомотива',
-                         '23.01.10':'Слесарь по обслуживанию и ремонту подвижного состава',
-                         '23.02.06':'Техническая эксплуатация подвижного состава железных дорог',
-                         '43.01.06':'Проводник на железнодорожном транспорте',
-                         '43.01.09 Повар, кондитер (Хоринский филиал)':'',
-                         '43.02.06':'Сервис на транспорте (по видам транспорта)',
-                         '44.02.06':'Профессиональное обучение (по отраслям)'}
+        dct_code_name = {'08.01.31 Электромонтажник электрических сетей и электрооборудования РБ': '',
+                         '08.01.31 Электромонтажник электрических сетей и электрооборудования ФБ': '',
+                         '08.02.09': 'Монтаж, наладка и эксплуатация электрооборудования промышленных и гражданских зданий',
+                         '13.02.07': 'Электроснабжение (по отраслям)',
+                         '13.02.13': 'Эксплуатация и обслуживание электрического и электромеханического оборудования (по отраслям)',
+                         '15.01.05': 'Сварщик (ручной и частично механизированной сварки (наплавки)',
+                         '15.01.05 Сварщик (ручной и частично механизированной сварки (наплавки) Хоринский филиал': '',
+                         '15.01.35': 'Мастер слесарных работ',
+                         '15.02.16': ' Технология машиностроения',
+                         'Электровоз. 23.01.09': 'Машинист локомотива',
+                         'Тепловоз. 23.01.09': 'Машинист локомотива',
+                         '23.01.10': 'Слесарь по обслуживанию и ремонту подвижного состава',
+                         '23.02.06': 'Техническая эксплуатация подвижного состава железных дорог',
+                         '43.01.06': 'Проводник на железнодорожном транспорте',
+                         '43.01.09 Повар, кондитер (Хоринский филиал)': '',
+                         '43.02.06': 'Сервис на транспорте (по видам транспорта)',
+                         '44.02.06': 'Профессиональное обучение (по отраслям)'}
 
-        dct_kcp = {'08.01.31':35,
-                         '08.02.09':25,
-                         '13.02.07':50,
-                         '13.02.13':25,
-                         '15.01.05':40,
-                         '15.01.05 Сварщик (ручной и частично механизированной сварки (наплавки) Хоринский филиал':20,
-                         '15.01.35':25,
-                         '15.02.16':50,
-                         'Тепловоз. 23.01.09':50,
-                         'Электровоз. 23.01.09':50,
-                         '23.01.10':50,
-                         '23.02.06':25,
-                         '43.01.06':25,
-                         '43.01.09':25,
-                         '43.02.06':25,
-                         '44.02.06':25}
-
-
+        dct_kcp = {'08.01.31 Электромонтажник электрических сетей и электрооборудования РБ': 25,
+                   '08.01.31 Электромонтажник электрических сетей и электрооборудования ФБ': 10,
+                   '08.02.09': 25,
+                   '13.02.07': 50,
+                   '13.02.13': 25,
+                   '15.01.05': 40,
+                   '15.01.05 Сварщик (ручной и частично механизированной сварки (наплавки) Хоринский филиал': 20,
+                   '15.01.35': 25,
+                   '15.02.16': 50,
+                   'Тепловоз. 23.01.09': 50,
+                   'Электровоз. 23.01.09': 50,
+                   '23.01.10': 50,
+                   '23.02.06': 25,
+                   '43.01.06': 25,
+                   '43.01.09': 25,
+                   '43.02.06': 25,
+                   '44.02.06': 25}
 
         base_df = pd.DataFrame(columns=['Код', 'Наименование'])
         base_df['Код'] = dct_code_name.keys()
@@ -265,7 +272,7 @@ def processing_report():
         base_df['База'] = '9 кл.'
         base_df['Количество мест'] = dct_kcp.values()
         base_df['Конкурс'] = base_df['Конкурс'].apply(str.strip)
-
+        base_df.to_excel('data/1.xlsx',index=False)
         df_abitur = pd.read_excel(name_file_abiturs, skiprows=3, usecols=['Абитуриент', 'Доп. статус', '№ заявления'])
         df_person = pd.read_excel(name_file_person, sheet_name='Абитуриенты', skiprows=8,
                                   usecols=['ФИО', 'Нуждается в общежитии', 'Формирующее подр.',
@@ -276,9 +283,9 @@ def processing_report():
         df_abitur = df_abitur[~df_abitur['№ заявления'].isnull()]
 
 
-        df_dupl = df_person.drop_duplicates(subset=['ФИО'])  # создаем датафрейм без дубликатов
-
+        df_dupl = df_person.drop_duplicates(subset=['ФИО','СНИЛС','Набор ОП'])  # создаем датафрейм без дубликатов
         dupl_cross_df = df_dupl.merge(df_abitur, how='inner', left_on='ФИО', right_on='Абитуриент')
+
 
         # Преобразовываем да-нет в 1 или 0 для подсчетов
         dupl_cross_df['Нуждается в общежитии'] = dupl_cross_df['Нуждается в общежитии'].apply(
@@ -292,10 +299,11 @@ def processing_report():
         dupl_cross_df['Целевой договор'] = dupl_cross_df['Доп. статус'].apply(
             lambda x: 1 if 'Целевой договор' in x else 0)
 
+
+
         dupl_cross_df['for_counting'] = 1
 
         dupl_cross_df.drop(columns=['Доп. статус'], inplace=True)
-
 
         dupl_svod_df = pd.DataFrame.pivot_table(dupl_cross_df,
                                                 index=['Формирующее подр.', 'Набор ОП'],
@@ -303,19 +311,19 @@ def processing_report():
                                                         'Нуждается в общежитии'],
                                                 aggfunc='sum')
 
+
         dupl_svod_df.columns = ['Нуждается в общежитии чел.', 'Дети СВО', 'Сдано оригиналов', 'Сирот чел.',
-                                'Целевой договор']
+                                                                'Целевой договор']
 
         # Меняем местами столбцы
         single_out_df = dupl_svod_df.reindex(
             columns=['Сдано оригиналов',
                      'Нуждается в общежитии чел.',
                      'Сирот чел.', 'Дети СВО', 'Целевой договор'])
-
+        single_out_df.to_excel('data/7.xlsx', index=True)
         # Соединяем оба датафрейма
 
         cross_df = df_person.merge(df_abitur, how='inner', left_on='ФИО', right_on='Абитуриент')
-
 
         # Преобразовываем да-нет в 1 или 0 для подсчетов
         cross_df['Нуждается в общежитии'] = cross_df['Нуждается в общежитии'].apply(lambda x: 0 if x == 'нет' else 1)
@@ -351,7 +359,6 @@ def processing_report():
                                 right_on='Набор ОП')
         base_df.sort_values(by='Подано заявлений', ascending=False, inplace=True)
 
-
         base_df.rename(columns={'Наименование': 'Наименование образовательной программы'})
         base_df.drop(columns='Набор ОП', inplace=True)
 
@@ -370,23 +377,24 @@ def processing_report():
         svod_df['Итого заявлений'] = svod_df['Заявления'] - svod_df['Забрали заявления']
 
         out_df = svod_df.reset_index()
+        out_df.to_excel('data/5.xlsx',index=False)
 
         single_out_df = single_out_df.reset_index()
-
+        single_out_df.to_excel('data/6.xlsx',index=False)
         finish_df = pd.merge(out_df, single_out_df, how='inner')  # объединяем
+        finish_df.to_excel('data/4.xlsx',index=False)
 
         # Добавляем колонку с количеством мест
 
-        finish_df = pd.merge(finish_df, base_df, how='inner',left_on='Набор ОП',right_on='Конкурс')
-        finish_df.insert(2,'КЦП',finish_df['Количество мест'])
-
+        finish_df = pd.merge(finish_df, base_df, how='inner', left_on='Набор ОП', right_on='Конкурс')
+        finish_df.insert(2, 'КЦП', finish_df['Количество мест'])
 
         # удаляем лишние
-        finish_df.drop(columns=['Код','Наименование','База','Подано заявлений','Количество мест'],inplace=True)
+        finish_df.drop(columns=['Код', 'Наименование', 'База', 'Подано заявлений', 'Количество мест'], inplace=True)
 
-        finish_df.rename(columns={'Формирующее подр.':'Отделение','Набор ОП':'Конкурс'},inplace=True)
+        finish_df.rename(columns={'Формирующее подр.': 'Отделение', 'Набор ОП': 'Конкурс'}, inplace=True)
 
-        finish_df = finish_df.iloc[:,:-1]
+        finish_df = finish_df.iloc[:, :-1]
 
         wb = openpyxl.Workbook()
         # Переименовываем лист
@@ -403,7 +411,7 @@ def processing_report():
         all_finish_df = pd.concat([finish_df, sum_row], axis=0)
         all_finish_df.insert(6, 'Чел/место', round(finish_df['Итого заявлений'] / finish_df['КЦП'], 2))
 
-        all_finish_df.iloc[-1,6] = round(all_finish_df.iloc[-1,5] / all_finish_df.iloc[-1,2],2)
+        all_finish_df.iloc[-1, 6] = round(all_finish_df.iloc[-1, 5] / all_finish_df.iloc[-1, 2], 2)
         for r in dataframe_to_rows(all_finish_df, index=False, header=True):
             if len(r) != 1:
                 wb['Отчет'].append(r)
@@ -428,7 +436,7 @@ def processing_report():
         wb.save(f'{path_to_end_folder_report}/Ежедневный отчет приемной комиссии ГБПОУ БРИТ {current_time}.xlsx')
 
         # ищем полных тезок
-        temp_df = df_person.drop_duplicates(subset=['ФИО','СНИЛС'])
+        temp_df = df_person.drop_duplicates(subset=['ФИО', 'СНИЛС'])
         tezki_df = temp_df[temp_df.duplicated(subset='ФИО', keep=False)]
 
         tezki_df.to_excel(f'{path_to_end_folder_report}/Полные тезки {current_time}.xlsx', index=False)
@@ -436,13 +444,18 @@ def processing_report():
 
 
     except NameError:
-        messagebox.showerror('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.7','Выберите файлы для обработки и конечную папку!')
+        messagebox.showerror('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.7',
+                             'Выберите файлы для обработки и конечную папку!')
     else:
-        messagebox.showinfo('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.7','Создание отчета успешно завершено!')
+        messagebox.showinfo('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.7',
+                            'Создание отчета успешно завершено!')
+
 
 """
 Функции для проверки наличия людей
 """
+
+
 def convert_columns_to_str(df, number_columns):
     """
     Функция для конвертации указанных столбцов в строковый тип и очистки от пробельных символов в начале и конце
@@ -463,18 +476,19 @@ def convert_params_columns_to_int(lst):
     Функция для конвератации значений колонок которые нужно обработать.
     Очищает от пустых строк, чтобы в итоге остался список из чисел в формате int
     """
-    out_lst = [] # Создаем список в который будем добавлять только числа
-    for value in lst: # Перебираем список
+    out_lst = []  # Создаем список в который будем добавлять только числа
+    for value in lst:  # Перебираем список
         try:
             # Обрабатываем случай с нулем, для того чтобы после приведения к питоновскому отсчету от нуля не получилась колонка с номером -1
             number = int(value)
             if number != 0:
-                out_lst.append(value) # Если конвертирования прошло без ошибок то добавляем
+                out_lst.append(value)  # Если конвертирования прошло без ошибок то добавляем
             else:
                 continue
-        except: # Иначе пропускаем
+        except:  # Иначе пропускаем
             continue
     return out_lst
+
 
 def create_doc_convert_date(cell):
     """
@@ -490,6 +504,7 @@ def create_doc_convert_date(cell):
     except TypeError:
         return 'Не удалось конвертировать дату.Проверьте значение ячейки!!!'
 
+
 def check_date_columns(i, value):
     """
     Функция для проверки типа колонки. Необходимо найти колонки с датой
@@ -503,6 +518,7 @@ def check_date_columns(i, value):
         pass
     else:
         return i
+
 
 def processing_date_column(df, lst_columns):
     """
@@ -526,7 +542,8 @@ def processing_date_column(df, lst_columns):
         df.iloc[:, i] = pd.to_datetime(df.iloc[:, i], errors='coerce', dayfirst=True)
         df.iloc[:, i] = df.iloc[:, i].apply(create_doc_convert_date)
 
-def clean_ending_columns(lst_columns:list,name_first_df,name_second_df):
+
+def clean_ending_columns(lst_columns: list, name_first_df, name_second_df):
     """
     Функция для очистки колонок таблицы с совпадающими данными от окончаний _x _y
 
@@ -536,13 +553,13 @@ def clean_ending_columns(lst_columns:list,name_first_df,name_second_df):
     :param name_second_df
     :return:
     """
-    out_columns = [] # список для очищенных названий
+    out_columns = []  # список для очищенных названий
     for name_column in lst_columns:
         if '_x' in name_column:
             # если они есть то проводим очистку и добавление времени
-            cut_name_column = name_column[:-2] # обрезаем
-            temp_name = f'{cut_name_column}_{name_first_df}' # соединяем
-            out_columns.append(temp_name) # добавляем
+            cut_name_column = name_column[:-2]  # обрезаем
+            temp_name = f'{cut_name_column}_{name_first_df}'  # соединяем
+            out_columns.append(temp_name)  # добавляем
         elif '_y' in name_column:
             cut_name_column = name_column[:-2]  # обрезаем
             temp_name = f'{cut_name_column}_{name_second_df}'  # соединяем
@@ -550,6 +567,7 @@ def clean_ending_columns(lst_columns:list,name_first_df,name_second_df):
         else:
             out_columns.append(name_column)
     return out_columns
+
 
 def select_file_params_comparsion():
     """
@@ -580,6 +598,7 @@ def select_second_comparison():
     name_second_file_comparison = filedialog.askopenfilename(
         filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
 
+
 def select_end_folder_comparison():
     """
     Функция для выбора папки куда будет генерироваться итоговый файл
@@ -600,13 +619,13 @@ def processing_comparison():
         second_sheet_name = 'Отчет'
         # загружаем файлы
         first_df = pd.read_excel(name_first_file_comparison, sheet_name=first_sheet_name, dtype=str,
-                                 keep_default_na=False,skiprows=3)
+                                 keep_default_na=False, skiprows=3)
         # получаем имя файла
         name_first_df = name_first_file_comparison.split('/')[-1]
         name_first_df = name_first_df.split('.xlsx')[0]
 
         second_df = pd.read_excel(name_second_file_comparison, sheet_name=second_sheet_name, dtype=str,
-                                  keep_default_na=False,skiprows=3)
+                                  keep_default_na=False, skiprows=3)
         # получаем имя файла
         name_second_df = name_second_file_comparison.split('/')[-1]
         name_second_df = name_second_df.split('.xlsx')[0]
@@ -628,8 +647,6 @@ def processing_comparison():
         # Конвертируем нужные нам колонки в str
         convert_columns_to_str(first_df, int_params_first_columns)
         convert_columns_to_str(second_df, int_params_second_columns)
-
-
 
         # Проверяем наличие колонок с датами в списке колонок для объединения чтобы привести их в нормальный вид
         for number_column_params in int_params_first_columns:
@@ -663,12 +680,11 @@ def processing_comparison():
 
         # создаем датафреймы из колонок выбранных для объединения, такой способо связан с тем, что
         # при использовании sum числа в строковом виде превращаются в числа
-        key_first_df = first_df.iloc[:,int_params_first_columns]
-        key_second_df = second_df.iloc[:,int_params_second_columns]
+        key_first_df = first_df.iloc[:, int_params_first_columns]
+        key_second_df = second_df.iloc[:, int_params_second_columns]
         # Создаем в каждом датафрейме колонку с айди путем склеивания всех нужных колонок в одну строку
-        first_df['ID_объединения'] = key_first_df.apply(lambda x:''.join(x),axis=1)
+        first_df['ID_объединения'] = key_first_df.apply(lambda x: ''.join(x), axis=1)
         second_df['ID_объединения'] = key_second_df.apply(lambda x: ''.join(x), axis=1)
-
 
         first_df['ID_объединения'] = first_df['ID_объединения'].apply(lambda x: x.replace(' ', ''))
         second_df['ID_объединения'] = second_df['ID_объединения'].apply(lambda x: x.replace(' ', ''))
@@ -688,7 +704,6 @@ def processing_comparison():
         wb.create_sheet(title='В обеих таблицах', index=2)
         # wb.create_sheet(title='Обновленная таблица', index=3)
         # wb.create_sheet(title='Объединённая таблица', index=4)
-
 
         # Создаем переменные содержащие в себе количество колонок в базовых датареймах
         first_df_quantity_cols = len(first_df.columns)  # не забываем что там добавилась колонка ID
@@ -763,7 +778,7 @@ def processing_comparison():
 
             update_df[column] = np.where(
                 (update_df['_merge'] == 'both') & (update_df[dct_second_columns[name_column]]) & (
-                            update_df[dct_second_columns[name_column]] != ' '),
+                        update_df[dct_second_columns[name_column]] != ' '),
                 update_df[dct_second_columns[name_column]], update_df[column])
 
             # Удаляем колонки с _y
@@ -820,14 +835,11 @@ def processing_comparison():
         messagebox.showinfo('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.7', 'Данные успешно обработаны')
 
 
-
-
 if __name__ == '__main__':
     window = Tk()
-    window.title('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.9')
+    window.title('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.91')
     window.geometry('700x660')
     window.resizable(False, False)
-
 
     # Создаем объект вкладок
 
@@ -870,7 +882,7 @@ if __name__ == '__main__':
                                    )
     btn_choose_end_folder.grid(column=0, row=4, padx=10, pady=10)
 
-    #Создаем кнопку обработки данных
+    # Создаем кнопку обработки данных
 
     btn_proccessing_data = Button(tab_report, text='4) Создать отчет', font=('Arial Bold', 20),
                                   command=processing_report
@@ -975,7 +987,6 @@ if __name__ == '__main__':
                                         )
     btn_data_second_comparison.grid(column=0, row=7, padx=10, pady=10)
 
-
     # Создаем кнопку выбора папки куда будет генерироваьться файл
     btn_select_end_comparison = Button(frame_data_for_comparison, text='5) Выберите конечную папку',
                                        font=('Arial Bold', 10),
@@ -988,7 +999,5 @@ if __name__ == '__main__':
                                     command=processing_comparison
                                     )
     btn_data_do_comparison.grid(column=0, row=11, padx=10, pady=10)
-
-
 
     window.mainloop()
