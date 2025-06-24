@@ -272,7 +272,6 @@ def processing_report():
         base_df['База'] = '9 кл.'
         base_df['Количество мест'] = dct_kcp.values()
         base_df['Конкурс'] = base_df['Конкурс'].apply(str.strip)
-        base_df.to_excel('data/1.xlsx',index=False)
         df_abitur = pd.read_excel(name_file_abiturs, skiprows=3, usecols=['Абитуриент', 'Доп. статус', '№ заявления'])
         df_person = pd.read_excel(name_file_person, sheet_name='Абитуриенты', skiprows=8,
                                   usecols=['ФИО', 'Нуждается в общежитии', 'Формирующее подр.',
@@ -285,6 +284,9 @@ def processing_report():
 
         df_dupl = df_person.drop_duplicates(subset=['ФИО','СНИЛС','Набор ОП'])  # создаем датафрейм без дубликатов
         dupl_cross_df = df_dupl.merge(df_abitur, how='inner', left_on='ФИО', right_on='Абитуриент')
+
+        # очищаем от тех конкурсов где  были забраны документы кто забрал документы
+        dupl_cross_df = dupl_cross_df[dupl_cross_df['Состояние выбран. конкурса'] != 'Забрал документы']
 
 
         # Преобразовываем да-нет в 1 или 0 для подсчетов
@@ -299,8 +301,7 @@ def processing_report():
         dupl_cross_df['Целевой договор'] = dupl_cross_df['Доп. статус'].apply(
             lambda x: 1 if 'Целевой договор' in x else 0)
 
-        dupl_cross_df['Состояние выбран. конкурса'] = dupl_cross_df['Состояние выбран. конкурса'].apply(
-            lambda x: 1 if 'Сданы ВИ' in x else 0)
+
 
         dupl_cross_df['for_counting'] = 1
 
@@ -309,20 +310,18 @@ def processing_report():
         dupl_svod_df = pd.DataFrame.pivot_table(dupl_cross_df,
                                                 index=['Формирующее подр.', 'Набор ОП'],
                                                 values=['Сдан оригинал', 'Сироты', 'СВО', 'Целевой договор',
-                                                        'Нуждается в общежитии','Состояние выбран. конкурса'],
+                                                        'Нуждается в общежитии'],
                                                 aggfunc='sum')
 
 
         dupl_svod_df.columns = ['Нуждается в общежитии чел.', 'Дети СВО', 'Сдано оригиналов', 'Сирот чел.',
-                                'Состояние выбран. конкурса',
-                                'Целевой договор']
+                                                                'Целевой договор']
 
         # Меняем местами столбцы
         single_out_df = dupl_svod_df.reindex(
             columns=['Сдано оригиналов',
                      'Нуждается в общежитии чел.',
-                     'Сирот чел.', 'Дети СВО', 'Целевой договор','Состояние выбран. конкурса'])
-        single_out_df.to_excel('data/7.xlsx', index=True)
+                     'Сирот чел.', 'Дети СВО', 'Целевой договор'])
         # Соединяем оба датафрейма
 
         cross_df = df_person.merge(df_abitur, how='inner', left_on='ФИО', right_on='Абитуриент')
@@ -379,12 +378,9 @@ def processing_report():
         svod_df['Итого заявлений'] = svod_df['Заявления'] - svod_df['Забрали заявления']
 
         out_df = svod_df.reset_index()
-        out_df.to_excel('data/5.xlsx',index=False)
 
         single_out_df = single_out_df.reset_index()
-        single_out_df.to_excel('data/6.xlsx',index=False)
         finish_df = pd.merge(out_df, single_out_df, how='inner')  # объединяем
-        finish_df.to_excel('data/4.xlsx',index=False)
 
         # Добавляем колонку с количеством мест
 
