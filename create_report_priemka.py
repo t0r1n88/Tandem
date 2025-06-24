@@ -75,8 +75,57 @@ def processing_report_tandem(name_file_person:str,end_folder:str):
     kcp_df['union'] = kcp_df['Набор ОП'] + ' ' + kcp_df['Вид приема']
 
     svod_df = svod_df.merge(kcp_df,how='inner',left_on='union',right_on='union')
-    svod_df.drop(columns=['union','Набор ОП','Вид приема'],inplace=True)
+    svod_df.drop(columns=['Набор ОП','Вид приема'],inplace=True)
     svod_df.reindex(columns=['Отделение','Конкурс','Вид возмещения затрат','КЦП','Заявлений'])
+
+    # Считаем забранные заявления
+    person_df['Забрали заявления'] = person_df['Состояние выбран. конкурса'].apply(
+            lambda x: 1 if x == 'Забрал документы' else 0)
+
+    zab_df = pd.pivot_table(person_df,
+                             index=['Формирующее подр.','Набор ОП','Вид возмещения затрат'],
+                             values='Забрали заявления',
+                             aggfunc='sum',
+                            )
+
+    zab_df = zab_df.reset_index()
+    zab_df.rename(columns={'Вид возмещения затрат':'1'},inplace=True)
+    zab_df['union'] = zab_df['Набор ОП'] + ' ' + zab_df['1']  # для соединения
+    svod_df = svod_df.merge(zab_df,how='inner',left_on='union',right_on='union')
+    svod_df.drop(columns=['Набор ОП','Формирующее подр.','1'],inplace=True)
+
+    # Считаем Итоговое количество заявлений
+    svod_df['Итого заявлений'] = svod_df['Заявлений'] - svod_df['Забрали заявления']
+    # Считаем человек на место
+    svod_df['Чел/место'] = round(svod_df['Итого заявлений'] / svod_df['КЦП'],2)
+
+
+
+    # Считаем забранные заявления
+    person_df['Сдано оригиналов'] = person_df['Сдан оригинал'].apply(
+            lambda x: 1 if x == 'да' else 0)
+
+    orig_df = pd.pivot_table(person_df,
+                             index=['Формирующее подр.','Набор ОП','Вид возмещения затрат'],
+                             values='Сдано оригиналов',
+                             aggfunc='sum',
+                            )
+
+    orig_df = orig_df.reset_index()
+    orig_df.rename(columns={'Вид возмещения затрат':'1'},inplace=True)
+    orig_df['union'] = orig_df['Набор ОП'] + ' ' + orig_df['1']  # для соединения
+    svod_df = svod_df.merge(orig_df,how='inner',left_on='union',right_on='union')
+    svod_df.drop(columns=['Набор ОП','Формирующее подр.','1'],inplace=True)
+
+
+
+
+
+
+
+
+
+
 
 
 
