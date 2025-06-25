@@ -17,7 +17,7 @@ def processing_report_tandem(name_file_person:str,end_folder:str):
     # Получаем текущее время для того чтобы использовать в названии
     t = time.localtime()
     current_time = time.strftime('%H_%M_%d_%m', t)
-    person_df = pd.read_excel(name_file_person,sheet_name='Абитуриенты',skiprows=8,dtype=str)
+    person_df = pd.read_excel(name_file_person,sheet_name='Абитуриенты',skiprows=8)
 
     svod_df = pd.pivot_table(person_df,
                              index=['Формирующее подр.','Набор ОП','Вид возмещения затрат'],
@@ -117,6 +117,43 @@ def processing_report_tandem(name_file_person:str,end_folder:str):
     svod_df = svod_df.merge(orig_df,how='inner',left_on='union',right_on='union')
     svod_df.drop(columns=['Набор ОП','Формирующее подр.','1'],inplace=True)
 
+    # Средний балл
+    avg_df = pd.pivot_table(person_df,
+                            index=['Формирующее подр.','Набор ОП','Вид возмещения затрат'],
+                            values='Ср. балл док-та об образовании',
+                            aggfunc='mean')
+    avg_df = avg_df.reset_index()
+    avg_df.rename(columns={'Вид возмещения затрат':'1','Ср. балл док-та об образовании':'Средний балл'},inplace=True)
+    avg_df['Средний балл'] = round(avg_df['Средний балл'],2)
+    avg_df['union'] = avg_df['Набор ОП'] + ' ' + avg_df['1']  # для соединения
+    svod_df = svod_df.merge(avg_df,how='inner',left_on='union',right_on='union')
+    svod_df.drop(columns=['Набор ОП','Формирующее подр.','1'],inplace=True)
+
+    svod_df.drop(columns=['union'],inplace=True)
+    svod_df.reindex(columns=['Отделение','Конкурс','Вид возмещения затрат','КЦП','Заявлений','Забрали заявления',
+                             'Итого заявлений','Сдано оригиналов','Чел/место','Средний балл'])
+
+    sum_row = svod_df.sum(axis=0).to_frame().transpose()
+
+    sum_row['Отделение'] = 'Всего'
+    sum_row['Конкурс'] = ''
+    sum_row['Вид возмещения затрат'] = ''
+    sum_row['Чел/место'] = ''
+    sum_row['Средний балл'] = ''
+
+
+    # объединяем датафреймы
+
+    svod_df = pd.concat([svod_df, sum_row], axis=0)
+
+
+
+
+    # Считаем обще
+
+
+    with pd.ExcelWriter(f'{end_folder}/Ежедневный отчет {current_time}.xlsx') as writer:
+        svod_df.to_excel(writer, sheet_name='Отчет',index=False)
 
 
 
@@ -131,7 +168,12 @@ def processing_report_tandem(name_file_person:str,end_folder:str):
 
 
 
-    svod_df.to_excel(f'{end_folder}/Ежедневный отчет {current_time}.xlsx',index=False)
+
+
+
+
+
+    # svod_df.to_excel(f'{end_folder}/Ежедневный отчет {current_time}.xlsx',index=False)
 
 
 
