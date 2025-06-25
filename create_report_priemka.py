@@ -23,14 +23,13 @@ def processing_report_tandem(name_file_person:str,end_folder:str):
                              index=['Формирующее подр.','Набор ОП','Вид возмещения затрат'],
                              values='ФИО',
                              aggfunc='count',
-                             margins_name='Итого',
-                             margins=True)
+                             )
 
     svod_df = svod_df.reset_index()
 
 
 
-    svod_df.rename(columns={'ФИО':'Заявлений','Формирующее подр.':'Отделение','Набор ОП':'Конкурс'},inplace=True)
+    svod_df.rename(columns={'ФИО':'Заявлений','Набор ОП':'Конкурс'},inplace=True)
 
     svod_df['union'] = svod_df['Конкурс'] + ' ' + svod_df['Вид возмещения затрат'] # для соединения
 
@@ -66,7 +65,19 @@ def processing_report_tandem(name_file_person:str,end_folder:str):
                       25,20,25,
                       25,25,25,
                       25
-                      ]
+                      ],
+               'Отделение':['Отделение металлообработки','Отделение железнодорожного транспорта','Отделение железнодорожного транспорта',
+                            'Отделение железнодорожного транспорта', 'Отделение металлообработки', 'Отделение металлообработки',
+                            'Отделение металлообработки', 'Отделение металлообработки', 'Отделение металлообработки',
+                            'Отделение металлообработки', 'Отделение металлообработки', 'Отделение металлообработки',
+                            'Отделение металлообработки', 'Отделение энергоснабжения', 'Отделение энергоснабжения',
+                            'Отделение энергоснабжения', 'Отделение энергоснабжения', 'Отделение энергоснабжения',
+                            'Отделение энергоснабжения', 'Отделение энергоснабжения', 'Отделение энергоснабжения',
+                            'Хоринский филиал', 'Хоринский филиал', 'Хоринский филиал',
+                            'Отделение железнодорожного транспорта', 'Отделение железнодорожного транспорта', 'Отделение железнодорожного транспорта',
+                            'Отделение железнодорожного транспорта'
+                            ],
+
                }
 
     # Создаем датафрейм с КЦП
@@ -74,9 +85,11 @@ def processing_report_tandem(name_file_person:str,end_folder:str):
     kcp_df.replace({'договор':'по договору','общий':'бюджет'},inplace=True)
     kcp_df['union'] = kcp_df['Набор ОП'] + ' ' + kcp_df['Вид приема']
 
-    svod_df = svod_df.merge(kcp_df,how='inner',left_on='union',right_on='union')
-    svod_df.drop(columns=['Набор ОП','Вид приема'],inplace=True)
-    svod_df.reindex(columns=['Отделение','Конкурс','Вид возмещения затрат','КЦП','Заявлений'])
+    # svod_df = svod_df.merge(kcp_df,how='inner',left_on='union',right_on='union')
+    svod_df = kcp_df.merge(svod_df,how='outer',left_on='union',right_on='union')
+    svod_df.drop(columns=['Конкурс','Формирующее подр.','Вид возмещения затрат'],inplace=True)
+    svod_df.rename(columns={'Набор ОП':'Конкурс'},inplace=True)
+
 
     # Считаем забранные заявления
     person_df['Забрали заявления'] = person_df['Состояние выбран. конкурса'].apply(
@@ -91,7 +104,7 @@ def processing_report_tandem(name_file_person:str,end_folder:str):
     zab_df = zab_df.reset_index()
     zab_df.rename(columns={'Вид возмещения затрат':'1'},inplace=True)
     zab_df['union'] = zab_df['Набор ОП'] + ' ' + zab_df['1']  # для соединения
-    svod_df = svod_df.merge(zab_df,how='inner',left_on='union',right_on='union')
+    svod_df = svod_df.merge(zab_df,how='outer',left_on='union',right_on='union')
     svod_df.drop(columns=['Набор ОП','Формирующее подр.','1'],inplace=True)
 
     # Считаем Итоговое количество заявлений
@@ -114,7 +127,7 @@ def processing_report_tandem(name_file_person:str,end_folder:str):
     orig_df = orig_df.reset_index()
     orig_df.rename(columns={'Вид возмещения затрат':'1'},inplace=True)
     orig_df['union'] = orig_df['Набор ОП'] + ' ' + orig_df['1']  # для соединения
-    svod_df = svod_df.merge(orig_df,how='inner',left_on='union',right_on='union')
+    svod_df = svod_df.merge(orig_df,how='outer',left_on='union',right_on='union')
     svod_df.drop(columns=['Набор ОП','Формирующее подр.','1'],inplace=True)
 
     # Средний балл
@@ -126,18 +139,22 @@ def processing_report_tandem(name_file_person:str,end_folder:str):
     avg_df.rename(columns={'Вид возмещения затрат':'1','Ср. балл док-та об образовании':'Средний балл'},inplace=True)
     avg_df['Средний балл'] = round(avg_df['Средний балл'],2)
     avg_df['union'] = avg_df['Набор ОП'] + ' ' + avg_df['1']  # для соединения
-    svod_df = svod_df.merge(avg_df,how='inner',left_on='union',right_on='union')
+    svod_df = svod_df.merge(avg_df,how='outer',left_on='union',right_on='union')
     svod_df.drop(columns=['Набор ОП','Формирующее подр.','1'],inplace=True)
 
     svod_df.drop(columns=['union'],inplace=True)
-    svod_df.reindex(columns=['Отделение','Конкурс','Вид возмещения затрат','КЦП','Заявлений','Забрали заявления',
+    svod_df = svod_df.reindex(columns=['Отделение','Конкурс','Вид приема','КЦП','Заявлений','Забрали заявления',
                              'Итого заявлений','Сдано оригиналов','Чел/место','Средний балл'])
+
+    svod_df.replace({'Отделение металлообработки': 'МО', 'Отделение железнодорожного транспорта': 'ЖД',
+                    'Отделение энергоснабжения':'ЭО','Хоринский филиал':'ХФ'}, inplace=True)
+
 
     sum_row = svod_df.sum(axis=0).to_frame().transpose()
 
     sum_row['Отделение'] = 'Всего'
     sum_row['Конкурс'] = ''
-    sum_row['Вид возмещения затрат'] = ''
+    sum_row['Вид приема'] = ''
     sum_row['Чел/место'] = ''
     sum_row['Средний балл'] = ''
 
