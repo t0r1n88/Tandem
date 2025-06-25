@@ -166,11 +166,47 @@ def processing_report_tandem(name_file_person:str,end_folder:str):
 
 
 
-    # Считаем обще
+    # Считаем общие параметры
+    person_df['Доп. статус'] = person_df['Доп. статус'].astype(str)
+    # Удаляем дубликаты
+    person_df.drop_duplicates(subset='СНИЛС',inplace=True)
+
+    # Общежитие
+    person_df['Количество общежитие'] = person_df['Нуждается в общежитии'].apply(
+            lambda x: 1 if x == 'да' else 0)
+    dorm_value = person_df['Количество общежитие'].sum()
+
+
+    # Сироты
+    person_df['Сироты'] = person_df['Доп. статус'].apply(
+            lambda x: 1 if 'Сирота' in x else 0)
+
+    orpans_value = person_df['Сироты'].sum()
+
+    # СВО
+    person_df['СВО'] = person_df['Доп. статус'].apply(
+            lambda x: 1 if 'военнослужащих' in x else 0)
+
+    svo_value = person_df['СВО'].sum()
+
+    dct_all_value = {'Нуждающиеся в общежитии':dorm_value,
+                     'Сироты':orpans_value,
+                     'СВО':svo_value}
+
+    spec_df = pd.DataFrame.from_dict(dct_all_value, orient='index')
+    spec_df = spec_df.reset_index()
+    spec_df.columns = ['Показатель', 'Количество абитуриентов']
+
+
+
+
+
+
 
 
     with pd.ExcelWriter(f'{end_folder}/Ежедневный отчет {current_time}.xlsx') as writer:
         svod_df.to_excel(writer, sheet_name='Отчет',index=False)
+        spec_df.to_excel(writer,sheet_name='Спец данные',index=False)
 
 
 
