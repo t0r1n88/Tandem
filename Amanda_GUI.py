@@ -78,7 +78,7 @@ def processing_report():
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.92')
+    window.title('ЦОПП Бурятия Создание отчета приемной комиссии ver 1.93')
     window.geometry('700x660')
     window.resizable(False, False)
 
